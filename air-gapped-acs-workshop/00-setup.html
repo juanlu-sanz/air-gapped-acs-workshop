@@ -255,50 +255,36 @@ Secured API: https://api.secured-cluster.example.com:6443</code></pre>
 <hr>
 </div>
 <div class="sect2">
-<h3 id="_2_log_in_to_both_clusters"><a class="anchor" href="#_2_log_in_to_both_clusters"></a>2. Log in to both clusters</h3>
+<h3 id="login-clusters"><a class="anchor" href="#login-clusters"></a>2. Log in to both clusters and rename contexts</h3>
 <div class="paragraph">
-<p><strong>What:</strong> Authenticate with <code>oc login</code> to both clusters and rename the contexts.</p>
+<p><strong>What:</strong> Fill in <code>myenv.sh</code> with your cluster credentials and source it.</p>
 </div>
 <div class="paragraph">
-<p><strong>Why:</strong> Named contexts let every command in the workshop target the right cluster without switching.</p>
+<p><strong>Why:</strong> <code>myenv.sh</code> logs into both clusters and renames the contexts to <code>hub</code> and <code>secured</code> in one shot. Every <code>oc</code> command in the workshop uses these context names.</p>
 </div>
-<div id="login-clusters" class="listingblock console-input">
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc login --server=${HUB_API_URL} --username=kubeadmin --password=${HUB_PASSWORD}</code></pre>
-</div>
+<div class="paragraph">
+<p>See <a href="#export-variables">Export workshop variables</a> below for the full <code>myenv.sh</code> structure. After editing it with your API URLs and passwords, run:</p>
 </div>
 <div class="listingblock console-input">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc login --server=${SECURED_API_URL} --username=kubeadmin --password=${SECURED_PASSWORD}</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">source myenv.sh</code></pre>
 </div>
 </div>
-<hr>
-</div>
-<div class="sect2">
-<h3 id="rename-contexts"><a class="anchor" href="#rename-contexts"></a>3. Rename contexts</h3>
-<div class="paragraph">
-<p><strong>What:</strong> Rename the kube contexts to <code>hub</code> and <code>secured</code>.</p>
-</div>
-<div class="paragraph">
-<p><strong>Why:</strong> Every <code>oc</code> command in this workshop uses <code>--context hub</code> or <code>--context secured</code>. Renaming avoids long API-URL-based context names.</p>
-</div>
+<details id="rename-contexts">
+<summary class="title">Verify: Both contexts exist and are authenticated</summary>
+<div class="content">
 <div class="listingblock console-input">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc config rename-context $(oc config current-context) secured</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc whoami --context hub
+oc whoami --context secured</code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>Switch to the hub cluster and rename it too:</p>
-</div>
-<div class="listingblock console-input">
+<div class="listingblock console-output">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc config use-context &lt;hub-api-context-name&gt;
-oc config rename-context $(oc config current-context) hub</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kube:admin
+kube:admin</code></pre>
 </div>
 </div>
-<details>
-<summary class="title">Verify: Both contexts exist</summary>
-<div class="content">
 <div class="listingblock console-input">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc config get-contexts -o name</code></pre>
@@ -320,7 +306,7 @@ secured</code></pre>
 <h2 id="option-b"><a class="anchor" href="#option-b"></a>Option B: Quick login (clusters already configured)</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>If the contexts <code>hub</code> and <code>secured</code> are already present in your kubeconfig, verify they work:</p>
+<p>If someone else already ran <code>source myenv.sh</code> or set up the contexts for you, verify they work:</p>
 </div>
 <div class="listingblock console-input">
 <div class="content">
@@ -338,15 +324,58 @@ oc whoami --context secured</code></pre>
 <h2 id="export-variables"><a class="anchor" href="#export-variables"></a>Export workshop variables</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Export the variables used throughout the workshop. Adjust the values if your environment differs.</p>
+<p>The workshop uses several environment variables across all steps. Instead of exporting them one at a time, keep them in a personal <code>myenv.sh</code> file at the repo root. This file is gitignored because it contains passwords.</p>
+</div>
+<div class="paragraph">
+<p>Copy the template and fill in your cluster details:</p>
 </div>
 <div class="listingblock console-input">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export HUB_API_URL=$(oc whoami --show-server --context hub)
-export SECURED_API_URL=$(oc whoami --show-server --context secured)
-export ACS_CENTRAL_ROUTE=$(oc get route central -n stackrox --context hub -o jsonpath='{.spec.host}')
-export ROX_API_TOKEN=""  # Set after generating the token in the ACS UI</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">cp myenv.sh myenv.sh.bak  # optional, keep the template
+vi myenv.sh               # fill in your API URLs and passwords</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>The file follows this structure:</p>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Console URLs (for quick reference - not used by scripts)
+# Hub console:       https://console-openshift-console.apps.&lt;hub-domain&gt;
+# Secured console:   https://console-openshift-console.apps.&lt;secured-domain&gt;
+
+# -- Workshop variables (used by envsubst in YAML manifests) ---------------
+export HUB_API_URL="https://api.&lt;hub-domain&gt;:6443"
+export SECURED_API_URL="https://api.&lt;secured-domain&gt;:6443"
+
+export HUB_PASSWORD="&lt;kubeadmin-password-hub&gt;"
+export SECURED_PASSWORD="&lt;kubeadmin-password-secured&gt;"
+
+export ACS_CENTRAL_ROUTE=""   # Set after Central is deployed (step 6)
+export ROX_API_TOKEN=""       # Set after generating the token in the ACS UI (step 6)
+
+# -- Context cleanup (idempotent) ------------------------------------------
+oc config delete-context hub 2&gt;/dev/null
+oc config delete-context secured 2&gt;/dev/null
+
+# -- Login + rename contexts -----------------------------------------------
+oc login "$HUB_API_URL" --username kubeadmin --password "$HUB_PASSWORD"
+oc config rename-context "$(oc config current-context)" hub
+
+oc login "$SECURED_API_URL" --username kubeadmin --password "$SECURED_PASSWORD"
+oc config rename-context "$(oc config current-context)" secured</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Source it to log in and set up contexts in one shot:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">source myenv.sh</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can re-run <code>source myenv.sh</code> at any time. The context cleanup at the top makes it idempotent.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
@@ -364,34 +393,44 @@ export ROX_API_TOKEN=""  # Set after generating the token in the ACS UI</code></
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>HUB_API_URL</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>00-setup</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>00-setup</code>, <code>myenv.sh</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">API server URL of the hub cluster</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>SECURED_API_URL</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>00-setup</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>00-setup</code>, <code>myenv.sh</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">API server URL of the secured cluster</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>HUB_PASSWORD</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>myenv.sh</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">kubeadmin password for the hub cluster</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SECURED_PASSWORD</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>myenv.sh</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">kubeadmin password for the secured cluster</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>ACS_CENTRAL_ROUTE</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>01-reporting</code>, <code>02-compliance</code>, <code>03-airgapped-scanning</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">External hostname of ACS Central</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">External hostname of ACS Central (set after step 6)</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>ROX_API_TOKEN</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>01-reporting</code>, <code>03-airgapped-scanning</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">API token for <code>roxctl</code> and API calls</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">API token for <code>roxctl</code> and API calls (set after step 6)</p></td>
 </tr>
 </tbody>
 </table>
-<div class="admonitionblock tip">
+<div class="admonitionblock important">
 <table>
 <tr>
 <td class="icon">
-<i class="fa icon-tip" title="Tip"></i>
+<i class="fa icon-important" title="Important"></i>
 </td>
 <td class="content">
-Save these exports to <code>myenv.sh</code> (gitignored) so you can re-source them later: <code>source myenv.sh</code>.
+Never commit <code>myenv.sh</code> with real credentials. The <code>.gitignore</code> already excludes it.
 </td>
 </tr>
 </table>
