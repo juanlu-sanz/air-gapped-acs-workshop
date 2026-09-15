@@ -1,7 +1,7 @@
 {
   "name": "air-gapped-acs-workshop",
   "description": "RHACS Adoption Workshop: Reporting, Compliance, and Air-Gapped Scanning - Course Documentation Site",
-  "homepage": "https://juanlu-redhat.github.io/air-gapped-acs-workshop",
+  "homepage": "https://juanlu-sanz.github.io/air-gapped-acs-workshop",
   "dependencies": {
     "@antora/cli": "^2.3.1",
     "@antora/site-generator-default": "^2.3.1",
@@ -23,7 +23,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/juanlu-redhat/air-gapped-acs-workshop.git"
+    "url": "git+https://github.com/juanlu-sanz/air-gapped-acs-workshop.git"
   },
   "license": "Apache-2.0",
   "babel": {

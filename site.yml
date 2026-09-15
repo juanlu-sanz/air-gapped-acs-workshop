@@ -3,7 +3,7 @@ runtime:
 
 site:
   title: "RHACS: Reporting, Compliance, and Air-Gapped Scanning"
-  url: https://juanlu-redhat.github.io/air-gapped-acs-workshop
+  url: https://juanlu-sanz.github.io/air-gapped-acs-workshop
   start_page: air-gapped-acs-workshop::index.adoc
 
 content:

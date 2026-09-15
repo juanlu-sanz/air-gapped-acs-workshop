@@ -440,7 +440,7 @@ rhcos4-stig             2m
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-git clone https://github.com/juanlu-redhat/air-gapped-acs-workshop.git
+git clone https://github.com/juanlu-sanz/air-gapped-acs-workshop.git
 cd air-gapped-acs-workshop
 ----
 

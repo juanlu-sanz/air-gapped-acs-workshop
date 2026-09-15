@@ -4,7 +4,7 @@ Workshop for the RHACS adoption series covering three topics: vulnerability and 
 
 == View the course
 
-The full course is published at: https://juanlu-redhat.github.io/air-gapped-acs-workshop
+The full course is published at: https://juanlu-sanz.github.io/air-gapped-acs-workshop
 
 == Local development
 
