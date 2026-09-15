@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>RHACS: Reporting, Compliance, and Air-Gapped Scanning :: RHACS: Reporting, Compliance, and Air-Gapped Scanning</title>
+    <link rel="canonical" href="https://juanlu-redhat.github.io/air-gapped-acs-workshop/air-gapped-acs-workshop/03-airgapped-scanning.html">
+    <link rel="prev" href="02-compliance.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://juanlu-redhat.github.io/air-gapped-acs-workshop">RHACS: Reporting, Compliance, and Air-Gapped Scanning</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="air-gapped-acs-workshop" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Cluster Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#export-variables">Export Workshop Variables</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#login-clusters">Log In to Clusters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#rename-contexts">Rename Contexts</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#install-acs">Install ACS Central</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#register-secured-cluster">Register Secured Cluster</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#install-compliance-operator">Install Compliance Operator</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="01-reporting.html">Step 1: Reporting</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-reporting.html#vulnerability-report">Create a Vulnerability Report</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-reporting.html#schedule-report">Schedule Recurring Reports</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-reporting.html#interpret-report">Interpret Report for a Risk Team</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-reporting.html#api-export">Export Data via API</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="02-compliance.html">Step 2: Compliance</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-compliance.html#compliance-overview">Compliance in ACS</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-compliance.html#profiles">CIS and STIG Profiles</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-compliance.html#schedule-scan">Schedule a Compliance Scan</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-compliance.html#tailored-profile">Create a Tailored Profile</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-compliance.html#coverage-dashboard">Coverage Dashboard</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="03-airgapped-scanning.html">Step 3: Air-Gapped Scanning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#simulate-airgap">Simulate an Air-Gapped Registry</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#enable-delegated-scanning">Enable Delegated Scanning</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#push-test-image">Push a Test Image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#verify-scan">Verify Scan Results</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#offline-vuln-db">Update Vulnerability Database Offline</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">RHACS: Reporting, Compliance, and Air-Gapped Scanning</a></li>
+    <li><a href="03-airgapped-scanning.html">Step 3: Air-Gapped Scanning</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/juanlu-sanz/air-gapped-acs-workshop/edit/main/documentation/modules/ROOT/pages/03-airgapped-scanning.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">RHACS: Reporting, Compliance, and Air-Gapped Scanning</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>In many environments, container registries sit behind network boundaries that ACS Central cannot reach. Delegated scanning solves this: Scanner-slim on the secured cluster pulls and indexes images locally, then sends the results to Central for vulnerability matching. This step simulates that scenario by blocking Central&#8217;s access to the secured cluster&#8217;s internal registry and configuring delegated scanning.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Both clusters running and registered in ACS from <a href="00-setup.html" class="xref page">Cluster Setup</a></p>
+</li>
+<li>
+<p>Scanner-slim deployed on the secured cluster (included in the SecuredCluster CR from setup)</p>
+</li>
+<li>
+<p><code>ROX_API_TOKEN</code>, <code>ACS_CENTRAL_ROUTE</code>, and <code>roxctl</code> CLI available</p>
+</li>
+<li>
+<p>Steps 1 and 2 completed (reporting and compliance configured)</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_it_works"><a class="anchor" href="#_how_it_works"></a>How it works</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In a normal setup, ACS Central scans images by pulling them directly from the registry. When Central cannot reach a registry (because it is behind an air gap, in a DMZ, or on an isolated network), the scan request is delegated to a secured cluster that can reach the registry.</p>
+</div>
+<div class="paragraph">
+<p>The flow:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Central receives a scan request for an image hosted in an unreachable registry.</p>
+</li>
+<li>
+<p>Central delegates the request to a secured cluster configured for that registry.</p>
+</li>
+<li>
+<p>Scanner-slim on the secured cluster pulls the image, indexes its contents, and sends the index data back to Central.</p>
+</li>
+<li>
+<p>Central matches the index data against its vulnerability database and stores the results.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>In a real air-gapped environment, the vulnerability database also needs manual updates because Central cannot download new definitions from the internet. The <code>roxctl scanner download-db</code> and <code>roxctl scanner upload-db</code> commands handle that.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_steps_to_apply"><a class="anchor" href="#_steps_to_apply"></a>Steps to apply</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="simulate-airgap"><a class="anchor" href="#simulate-airgap"></a>1. Simulate an air-gapped registry</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Apply a NetworkPolicy that blocks traffic from outside the secured cluster to the internal OpenShift registry.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> This simulates the air-gap condition where Central (on the hub cluster) cannot directly pull images from the secured cluster&#8217;s registry. In production, this isolation happens at the network level (firewall rules, separate VLANs). Here we use a NetworkPolicy for a reproducible demo.</p>
+</div>
+<div class="paragraph">
+<p>First, confirm the internal registry is accessible on the secured cluster:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get route default-route -n openshift-image-registry --context secured -o jsonpath='{.spec.host}'; echo</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If the route does not exist, expose the registry:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc patch configs.imageregistry.operator.openshift.io/cluster --type merge \
+  -p '{"spec":{"defaultRoute":true}}' --context secured</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now apply the NetworkPolicy that restricts external access:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 03-airgapped-scanning/registry-network-policy.yaml --context secured</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Central cannot reach the registry</summary>
+<div class="content">
+<div class="paragraph">
+<p>From the hub cluster, try to reach the secured cluster&#8217;s registry (this should fail or time out):</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">REGISTRY_HOST=$(oc get route default-route -n openshift-image-registry --context secured -o jsonpath='{.spec.host}')
+curl -sk --max-time 5 "https://${REGISTRY_HOST}/v2/" &amp;&amp; echo "REACHABLE" || echo "BLOCKED"</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">BLOCKED</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>From within the secured cluster, it should still work:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc run registry-test --rm -i --restart=Never --context secured \
+  --image=registry.access.redhat.com/ubi9/ubi-minimal -- \
+  curl -sk "https://image-registry.openshift-image-registry.svc:5000/v2/"</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="enable-delegated-scanning"><a class="anchor" href="#enable-delegated-scanning"></a>2. Enable delegated scanning in ACS</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Configure ACS to delegate image scanning for the secured cluster&#8217;s internal registry to the secured cluster itself.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Without this configuration, Central would try to scan images from the internal registry, fail (because it is blocked), and report the image as unscanned.</p>
+</div>
+<div class="paragraph">
+<p>In the ACS console, go to Platform Configuration &gt; Clusters and click "Delegated scanning" in the header.</p>
+</div>
+<div class="paragraph">
+<p>Configure:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Delegation mode: "Specified registries"</p>
+</li>
+<li>
+<p>Add registry: <code>image-registry.openshift-image-registry.svc:5000</code> (the internal registry service name)</p>
+</li>
+<li>
+<p>Default cluster: Select <code>secured</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Click Save.</p>
+</div>
+<div class="paragraph">
+<p>You can also configure this through the API:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -sk -X PUT -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/delegatedregistryconfig" \
+  -d '{
+    "enabledFor": "SPECIFIC",
+    "defaultClusterId": "",
+    "registries": [
+      {
+        "path": "image-registry.openshift-image-registry.svc:5000",
+        "clusterId": ""
+      }
+    ]
+  }'</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Replace the empty <code>clusterId</code> values with your actual secured cluster ID. You can get it with:
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/clusters" | \
+  jq '.clusters[] | select(.name=="secured") | .id'</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Delegated scanning is configured</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/delegatedregistryconfig" | jq .</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">{
+  "enabledFor": "SPECIFIC",
+  "registries": [
+    {
+      "path": "image-registry.openshift-image-registry.svc:5000",
+      "clusterId": "..."
+    }
+  ]
+}</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="push-test-image"><a class="anchor" href="#push-test-image"></a>3. Push a test image to the internal registry</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Build or push a container image into the secured cluster&#8217;s internal OpenShift registry.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> You need an image in the isolated registry that Scanner-slim can scan. This proves the delegated scanning flow works end to end.</p>
+</div>
+<div class="paragraph">
+<p>Create a namespace and an ImageStream, then import an image:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 03-airgapped-scanning/scan-test-namespace.yaml --context secured</code></pre>
+</div>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc import-image test-app:latest \
+  --from=registry.access.redhat.com/ubi9/ubi-minimal:latest \
+  --confirm -n scan-test --context secured</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now deploy a pod from the internal registry image so ACS observes it:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 03-airgapped-scanning/test-deployment.yaml --context secured</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Pod is running with an image from the internal registry</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get pods -n scan-test --context secured -o wide</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                        READY   STATUS    RESTARTS   AGE
+test-app-xxxxxxxxx-xxxxx    1/1     Running   0          30s</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Check the image reference:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get deployment test-app -n scan-test --context secured \
+  -o jsonpath='{.spec.template.spec.containers[0].image}'; echo</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It should show an <code>image-registry.openshift-image-registry.svc:5000/scan-test/test-app</code> reference.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="verify-scan"><a class="anchor" href="#verify-scan"></a>4. Verify scan results in ACS Central</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Confirm that ACS scanned the image through delegated scanning and vulnerability data is available.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> This is the proof that the whole flow works: Central received scan results for an image it cannot reach directly.</p>
+</div>
+<div class="paragraph">
+<p>In the ACS console, go to Vulnerability Management &gt; Workloads and search for the <code>scan-test</code> namespace. Click the <code>test-app</code> deployment to see its vulnerabilities.</p>
+</div>
+<div class="paragraph">
+<p>You can also check from the API:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/deployments?query=Namespace:scan-test" | \
+  jq '.deployments[] | {name: .name, imageCount: (.containers | length)}'</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Vulnerabilities are reported</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">DEPLOYMENT_ID=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/deployments?query=Namespace:scan-test" | \
+  jq -r '.deployments[0].id')
+
+curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/deployments/${DEPLOYMENT_ID}" | \
+  jq '.containers[0].image.scan.components | length'</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">42</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A non-zero component count confirms Scanner-slim indexed the image and Central matched it against the vulnerability database.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="offline-vuln-db"><a class="anchor" href="#offline-vuln-db"></a>5. Update the vulnerability database offline</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Download the Scanner V4 vulnerability definitions on a connected workstation and upload them to Central.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> In a real air-gapped environment, Central cannot fetch vulnerability updates from the internet. Without fresh definitions, scans will miss recently disclosed CVEs. This procedure keeps the database current.</p>
+</div>
+<div class="paragraph">
+<p>On a workstation with internet access, download the definitions:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roxctl scanner download-db --scanner-db-file scanner-vuln-updates.zip</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Transfer the file to a machine that can reach Central (via USB, S3 bucket, bastion host, or whatever method your air-gapped process allows). Then upload it:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" scanner upload-db \
+  --scanner-db-file scanner-vuln-updates.zip</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Vulnerability database is updated</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/metadata" | \
+  jq '{version: .version, buildTimestamp: .buildTimestamp}'</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The Scanner picks up new definitions within 5 minutes. You can also trigger a rescan of the test deployment to confirm new CVEs appear:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" image scan \
+  --image "image-registry.openshift-image-registry.svc:5000/scan-test/test-app:latest" \
+  --cluster secured --output json | jq '.result.summary'</code></pre>
+</div>
+</div>
+</div>
+</details>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+In production air-gapped environments, automate this process. Download the definitions on a scheduled job on the connected side and transfer them through your approved data diode or cross-domain solution. Update at least once per day.
+</td>
+</tr>
+</table>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_solves_compared_to_steps_1_and_2"><a class="anchor" href="#_what_this_solves_compared_to_steps_1_and_2"></a>What this solves (compared to Steps 1 and 2)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Problem from earlier steps</th>
+<th class="tableblock halign-left valign-top">How this step solves it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Central cannot scan images in a registry it cannot reach</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Delegated scanning through Scanner-slim on the secured cluster handles the scan locally</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Vulnerability database goes stale in disconnected environments</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Manual upload of definitions via <code>roxctl scanner upload-db</code> keeps the database current</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_official_documentation"><a class="anchor" href="#_official_documentation"></a>Official documentation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/operating/examine-images-for-vulnerabilities#delegated-image-scanning_examine-images-for-vulnerabilities">Delegated image scanning in RHACS 4.11</a></p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/configuring/enable-offline-mode">Enabling offline mode in RHACS 4.11</a></p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/installing/installing-using-operator">Installing RHACS using the Operator</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_alternatives_considered"><a class="anchor" href="#_alternatives_considered"></a>Alternatives considered</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Approach</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Delegated scanning with Scanner-slim (this workshop)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The standard approach for registries that Central cannot reach. Scanner-slim runs on the secured cluster and handles indexing locally. Works with the OpenShift internal registry and external registries accessible from the secured cluster.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Mirror the registry to a location Central can reach</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Avoids delegated scanning entirely, but doubles storage and requires a sync process. Useful when you need Central to have full control over scanning.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Use Quay as a scanning registry</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Quay has its own vulnerability scanner (Clair). You could scan images in Quay and integrate the results with ACS. Adds a dependency on Quay but keeps scanning independent of ACS.</p></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reset"><a class="anchor" href="#_reset"></a>Reset</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Remove the test workloads, the delegated scanning configuration, and the network restriction. Reverse order: remove workloads first, then configuration, then the network policy.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Delete test workloads
+oc delete -f 03-airgapped-scanning/test-deployment.yaml --context secured --ignore-not-found
+oc delete -f 03-airgapped-scanning/scan-test-namespace.yaml --context secured --ignore-not-found --wait
+
+# Reset delegated scanning to "None" (default)
+curl -sk -X PUT -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/delegatedregistryconfig" \
+  -d '{"enabledFor": "NONE", "registries": []}'
+
+# Remove the network policy
+oc delete -f 03-airgapped-scanning/registry-network-policy.yaml --context secured --ignore-not-found
+
+# Remove the scanner vuln updates file
+rm -f scanner-vuln-updates.zip</code></pre>
+</div>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="02-compliance.html">Step 2: Compliance</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
