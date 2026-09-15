@@ -49,52 +49,39 @@ Secured API: https://api.secured-cluster.example.com:6443
 
 '''
 
-=== 2. Log in to both clusters
-
-*What:* Authenticate with `oc login` to both clusters and rename the contexts.
-
-*Why:* Named contexts let every command in the workshop target the right cluster without switching.
-
 [#login-clusters]
-[.console-input]
-[source,bash,subs="+macros,+attributes"]
-----
-oc login --server=${HUB_API_URL} --username=kubeadmin --password=${HUB_PASSWORD}
-----
+=== 2. Log in to both clusters and rename contexts
+
+*What:* Fill in `myenv.sh` with your cluster credentials and source it.
+
+*Why:* `myenv.sh` logs into both clusters and renames the contexts to `hub` and `secured` in one shot. Every `oc` command in the workshop uses these context names.
+
+See <<export-variables>> below for the full `myenv.sh` structure. After editing it with your API URLs and passwords, run:
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-oc login --server=${SECURED_API_URL} --username=kubeadmin --password=${SECURED_PASSWORD}
+source myenv.sh
 ----
-
-'''
 
 [#rename-contexts]
-=== 3. Rename contexts
-
-*What:* Rename the kube contexts to `hub` and `secured`.
-
-*Why:* Every `oc` command in this workshop uses `--context hub` or `--context secured`. Renaming avoids long API-URL-based context names.
-
-[.console-input]
-[source,bash,subs="+macros,+attributes"]
-----
-oc config rename-context $(oc config current-context) secured
-----
-
-Switch to the hub cluster and rename it too:
-
-[.console-input]
-[source,bash,subs="+macros,+attributes"]
-----
-oc config use-context <hub-api-context-name>
-oc config rename-context $(oc config current-context) hub
-----
-
-.Verify: Both contexts exist
+.Verify: Both contexts exist and are authenticated
 [%collapsible]
 ====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc whoami --context hub
+oc whoami --context secured
+----
+
+[.console-output]
+[source,bash]
+----
+kube:admin
+kube:admin
+----
+
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
@@ -114,7 +101,7 @@ secured
 [#option-b]
 == Option B: Quick login (clusters already configured)
 
-If the contexts `hub` and `secured` are already present in your kubeconfig, verify they work:
+If someone else already ran `source myenv.sh` or set up the contexts for you, verify they work:
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
@@ -130,39 +117,88 @@ Both should return `kube:admin` or your user. If they do, skip ahead to <<export
 [#export-variables]
 == Export workshop variables
 
-Export the variables used throughout the workshop. Adjust the values if your environment differs.
+The workshop uses several environment variables across all steps. Instead of exporting them one at a time, keep them in a personal `myenv.sh` file at the repo root. This file is gitignored because it contains passwords.
+
+Copy the template and fill in your cluster details:
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-export HUB_API_URL=$(oc whoami --show-server --context hub)
-export SECURED_API_URL=$(oc whoami --show-server --context secured)
-export ACS_CENTRAL_ROUTE=$(oc get route central -n stackrox --context hub -o jsonpath='{.spec.host}')
-export ROX_API_TOKEN=""  # Set after generating the token in the ACS UI
+cp myenv.sh myenv.sh.bak  # optional, keep the template
+vi myenv.sh               # fill in your API URLs and passwords
 ----
+
+The file follows this structure:
+
+[.console-output]
+[source,bash]
+----
+# Console URLs (for quick reference - not used by scripts)
+# Hub console:       https://console-openshift-console.apps.<hub-domain>
+# Secured console:   https://console-openshift-console.apps.<secured-domain>
+
+# -- Workshop variables (used by envsubst in YAML manifests) ---------------
+export HUB_API_URL="https://api.<hub-domain>:6443"
+export SECURED_API_URL="https://api.<secured-domain>:6443"
+
+export HUB_PASSWORD="<kubeadmin-password-hub>"
+export SECURED_PASSWORD="<kubeadmin-password-secured>"
+
+export ACS_CENTRAL_ROUTE=""   # Set after Central is deployed (step 6)
+export ROX_API_TOKEN=""       # Set after generating the token in the ACS UI (step 6)
+
+# -- Context cleanup (idempotent) ------------------------------------------
+oc config delete-context hub 2>/dev/null
+oc config delete-context secured 2>/dev/null
+
+# -- Login + rename contexts -----------------------------------------------
+oc login "$HUB_API_URL" --username kubeadmin --password "$HUB_PASSWORD"
+oc config rename-context "$(oc config current-context)" hub
+
+oc login "$SECURED_API_URL" --username kubeadmin --password "$SECURED_PASSWORD"
+oc config rename-context "$(oc config current-context)" secured
+----
+
+Source it to log in and set up contexts in one shot:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+source myenv.sh
+----
+
+You can re-run `source myenv.sh` at any time. The context cleanup at the top makes it idempotent.
 
 [cols="2,2,4",options="header"]
 |===
 | Variable | Used in | Description
 
 | `HUB_API_URL`
-| `00-setup`
+| `00-setup`, `myenv.sh`
 | API server URL of the hub cluster
 
 | `SECURED_API_URL`
-| `00-setup`
+| `00-setup`, `myenv.sh`
 | API server URL of the secured cluster
+
+| `HUB_PASSWORD`
+| `myenv.sh`
+| kubeadmin password for the hub cluster
+
+| `SECURED_PASSWORD`
+| `myenv.sh`
+| kubeadmin password for the secured cluster
 
 | `ACS_CENTRAL_ROUTE`
 | `01-reporting`, `02-compliance`, `03-airgapped-scanning`
-| External hostname of ACS Central
+| External hostname of ACS Central (set after step 6)
 
 | `ROX_API_TOKEN`
 | `01-reporting`, `03-airgapped-scanning`
-| API token for `roxctl` and API calls
+| API token for `roxctl` and API calls (set after step 6)
 |===
 
-TIP: Save these exports to `myenv.sh` (gitignored) so you can re-source them later: `source myenv.sh`.
+IMPORTANT: Never commit `myenv.sh` with real credentials. The `.gitignore` already excludes it.
 
 '''
 
