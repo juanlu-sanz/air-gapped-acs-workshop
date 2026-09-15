@@ -1,0 +1,58 @@
+= RHACS: Reporting, Compliance, and Air-Gapped Scanning
+:page-layout: home
+:!sectids:
+include::_attributes.adoc[]
+
+[.text-center.strong]
+== Security reporting, compliance posture, and scanning in disconnected environments
+
+This workshop covers three areas of Red Hat Advanced Cluster Security for Kubernetes (RHACS). You will create and schedule vulnerability reports, integrate the Compliance Operator with CIS and STIG benchmarks through tailored profiles, and configure delegated image scanning for a registry that ACS Central cannot reach directly. The exercises run on two OpenShift clusters hosted on AWS: one hub cluster running ACS Central, and one secured cluster simulating an air-gapped environment.
+
+[.tiles.browse]
+== Browse modules
+
+[.tile]
+.xref:00-setup.adoc[Cluster setup]
+* xref:00-setup.adoc#prerequisites[Prerequisites]
+* xref:00-setup.adoc#export-variables[Export variables]
+* xref:00-setup.adoc#install-acs[Install ACS]
+
+[.tile]
+.xref:01-reporting.adoc[Step 1: Reporting]
+* xref:01-reporting.adoc#vulnerability-report[Create a vulnerability report]
+* xref:01-reporting.adoc#schedule-report[Schedule recurring reports]
+* xref:01-reporting.adoc#api-export[Export data via API]
+
+[.tile]
+.xref:02-compliance.adoc[Step 2: Compliance]
+* xref:02-compliance.adoc#profiles[CIS and STIG profiles]
+* xref:02-compliance.adoc#tailored-profile[Tailored profiles]
+* xref:02-compliance.adoc#coverage-dashboard[Coverage dashboard]
+
+[.tile]
+.xref:03-airgapped-scanning.adoc[Step 3: Air-gapped scanning]
+* xref:03-airgapped-scanning.adoc#enable-delegated-scanning[Delegated scanning]
+* xref:03-airgapped-scanning.adoc#push-test-image[Scan a test image]
+* xref:03-airgapped-scanning.adoc#offline-vuln-db[Offline vulnerability database]
+
+== Environment
+
+[cols="2,3",options="header"]
+|===
+| Item | Value
+
+| OpenShift version
+| {ocp-version}
+
+| RHACS version
+| {acs-version}
+
+| Compliance Operator version
+| {compliance-operator-version}
+
+| Hub cluster
+| AWS (ROSA or OCP IPI) - runs ACS Central + Scanner V4
+
+| Secured cluster
+| AWS (ROSA or OCP IPI) - simulated air-gap with internal registry
+|===

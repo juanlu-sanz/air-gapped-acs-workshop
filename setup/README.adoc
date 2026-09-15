@@ -1,0 +1,31 @@
+= Infrastructure setup (internal)
+
+This directory contains Terraform configuration for provisioning two ROSA HCP clusters on AWS. It is intended for Red Hat internal use when preparing the workshop environment.
+
+== Prerequisites
+
+* Terraform 1.5+
+* AWS CLI configured with credentials
+* `rosa` CLI logged in
+* An OpenShift Cluster Manager (OCM) token
+
+== Usage
+
+[source,bash]
+----
+cd setup
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your values
+terraform init
+terraform plan
+terraform apply
+----
+
+After the clusters are running, follow the instructions in xref:../documentation/modules/ROOT/pages/00-setup.adoc[Cluster Setup] to install ACS and the Compliance Operator.
+
+== Teardown
+
+[source,bash]
+----
+terraform destroy
+----

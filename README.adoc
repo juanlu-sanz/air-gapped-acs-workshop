@@ -1,0 +1,53 @@
+= RHACS: Reporting, Compliance, and Air-Gapped Scanning
+
+Workshop for the RHACS adoption series covering three topics: vulnerability and compliance reporting, Compliance Operator integration with tailored profiles, and delegated image scanning in a simulated air-gapped environment. The exercises run on two OpenShift clusters hosted on AWS.
+
+== View the course
+
+The full course is published at: https://juanlu-redhat.github.io/air-gapped-acs-workshop
+
+== Local development
+
+To preview the course site locally:
+
+[source,bash]
+----
+npm install
+npm run dev
+----
+
+This starts a live-reload server at http://localhost:3000.
+
+== Build the site
+
+[source,bash]
+----
+npx antora site.yml
+----
+
+The generated site is output to `gh-pages/`.
+
+== Repository structure
+
+[cols="2,4",options="header"]
+|===
+| Directory | Purpose
+
+| `documentation/`
+| Antora courseware source (AsciiDoc pages, navigation, attributes)
+
+| `00-setup/`
+| YAML manifests for Cluster Setup (Operator subscriptions, Central CR, SecuredCluster CR, Compliance Operator)
+
+| `01-reporting/`
+| YAML manifests for Step 1 - Reporting (demo workloads)
+
+| `02-compliance/`
+| YAML manifests for Step 2 - Compliance (TailoredProfile, ScanSettingBinding)
+
+| `03-airgapped-scanning/`
+| YAML manifests for Step 3 - Air-Gapped Scanning (NetworkPolicy, test namespace, test deployment)
+
+| `setup/`
+| Terraform configuration for provisioning 2 ROSA HCP clusters on AWS (internal use)
+|===

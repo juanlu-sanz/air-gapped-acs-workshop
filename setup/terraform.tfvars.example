@@ -1,0 +1,11 @@
+# terraform.tfvars.example
+# Purpose: Example variable values - copy to terraform.tfvars and fill in
+
+aws_region            = "eu-west-1"
+cluster_prefix        = "acs-workshop"
+ocp_version           = "4.15.20"
+rosa_token            = "your-ocm-token-here"
+hub_compute_nodes     = 2
+secured_compute_nodes = 2
+compute_machine_type  = "m5.xlarge"
+availability_zones    = ["eu-west-1a"]

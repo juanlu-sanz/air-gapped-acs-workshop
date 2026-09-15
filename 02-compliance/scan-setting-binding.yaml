@@ -1,0 +1,22 @@
+# scan-setting-binding.yaml
+# Purpose: Bind the tailored profile and the built-in CIS profile to the default
+# scan setting for running compliance scans via the Compliance Operator directly
+apiVersion: compliance.openshift.io/v1alpha1
+kind: ScanSettingBinding
+metadata:
+  name: cis-workshop-scan
+  namespace: openshift-compliance
+  labels:
+    app.kubernetes.io/part-of: acs-workshop
+spec:
+  settingsRef:
+    apiGroup: compliance.openshift.io/v1alpha1
+    kind: ScanSetting
+    name: default
+  profiles:
+    - apiGroup: compliance.openshift.io/v1alpha1
+      kind: Profile
+      name: ocp4-cis
+    - apiGroup: compliance.openshift.io/v1alpha1
+      kind: TailoredProfile
+      name: cis-custom

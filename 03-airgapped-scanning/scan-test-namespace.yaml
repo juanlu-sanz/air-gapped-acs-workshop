@@ -1,0 +1,8 @@
+# scan-test-namespace.yaml
+# Purpose: Namespace for test workloads used to verify delegated scanning
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: scan-test
+  labels:
+    app.kubernetes.io/part-of: acs-workshop

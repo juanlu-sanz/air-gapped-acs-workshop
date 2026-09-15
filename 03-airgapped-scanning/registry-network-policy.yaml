@@ -1,0 +1,22 @@
+# registry-network-policy.yaml
+# Purpose: Restrict external access to the OpenShift internal registry to simulate
+# an air-gapped environment. Only pods within the cluster can reach the registry.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: restrict-registry-external-access
+  namespace: openshift-image-registry
+  labels:
+    app.kubernetes.io/part-of: acs-workshop
+spec:
+  podSelector:
+    matchLabels:
+      docker-registry: default
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 5000

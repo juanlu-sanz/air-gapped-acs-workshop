@@ -1,0 +1,380 @@
+= Step 3 - Air-Gapped Scanning: Delegated image scanning in a disconnected environment
+include::_attributes.adoc[]
+
+In many environments, container registries sit behind network boundaries that ACS Central cannot reach. Delegated scanning solves this: Scanner-slim on the secured cluster pulls and indexes images locally, then sends the results to Central for vulnerability matching. This step simulates that scenario by blocking Central's access to the secured cluster's internal registry and configuring delegated scanning.
+
+== Prerequisites
+
+* Both clusters running and registered in ACS from xref:00-setup.adoc[Cluster Setup]
+* Scanner-slim deployed on the secured cluster (included in the SecuredCluster CR from setup)
+* `ROX_API_TOKEN`, `ACS_CENTRAL_ROUTE`, and `roxctl` CLI available
+* Steps 1 and 2 completed (reporting and compliance configured)
+
+== How it works
+
+In a normal setup, ACS Central scans images by pulling them directly from the registry. When Central cannot reach a registry (because it is behind an air gap, in a DMZ, or on an isolated network), the scan request is delegated to a secured cluster that can reach the registry.
+
+The flow:
+
+1. Central receives a scan request for an image hosted in an unreachable registry.
+2. Central delegates the request to a secured cluster configured for that registry.
+3. Scanner-slim on the secured cluster pulls the image, indexes its contents, and sends the index data back to Central.
+4. Central matches the index data against its vulnerability database and stores the results.
+
+In a real air-gapped environment, the vulnerability database also needs manual updates because Central cannot download new definitions from the internet. The `roxctl scanner download-db` and `roxctl scanner upload-db` commands handle that.
+
+== Steps to apply
+
+[#simulate-airgap]
+=== 1. Simulate an air-gapped registry
+
+*What:* Apply a NetworkPolicy that blocks traffic from outside the secured cluster to the internal OpenShift registry.
+
+*Why:* This simulates the air-gap condition where Central (on the hub cluster) cannot directly pull images from the secured cluster's registry. In production, this isolation happens at the network level (firewall rules, separate VLANs). Here we use a NetworkPolicy for a reproducible demo.
+
+First, confirm the internal registry is accessible on the secured cluster:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get route default-route -n openshift-image-registry --context secured -o jsonpath='{.spec.host}'; echo
+----
+
+If the route does not exist, expose the registry:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc patch configs.imageregistry.operator.openshift.io/cluster --type merge \
+  -p '{"spec":{"defaultRoute":true}}' --context secured
+----
+
+Now apply the NetworkPolicy that restricts external access:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 03-airgapped-scanning/registry-network-policy.yaml --context secured
+----
+
+.Verify: Central cannot reach the registry
+[%collapsible]
+====
+From the hub cluster, try to reach the secured cluster's registry (this should fail or time out):
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+REGISTRY_HOST=$(oc get route default-route -n openshift-image-registry --context secured -o jsonpath='{.spec.host}')
+curl -sk --max-time 5 "https://${REGISTRY_HOST}/v2/" && echo "REACHABLE" || echo "BLOCKED"
+----
+
+[.console-output]
+[source,bash]
+----
+BLOCKED
+----
+
+From within the secured cluster, it should still work:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc run registry-test --rm -i --restart=Never --context secured \
+  --image=registry.access.redhat.com/ubi9/ubi-minimal -- \
+  curl -sk "https://image-registry.openshift-image-registry.svc:5000/v2/"
+----
+====
+
+'''
+
+[#enable-delegated-scanning]
+=== 2. Enable delegated scanning in ACS
+
+*What:* Configure ACS to delegate image scanning for the secured cluster's internal registry to the secured cluster itself.
+
+*Why:* Without this configuration, Central would try to scan images from the internal registry, fail (because it is blocked), and report the image as unscanned.
+
+In the ACS console, go to Platform Configuration > Clusters and click "Delegated scanning" in the header.
+
+Configure:
+
+* Delegation mode: "Specified registries"
+* Add registry: `image-registry.openshift-image-registry.svc:5000` (the internal registry service name)
+* Default cluster: Select `secured`
+
+Click Save.
+
+You can also configure this through the API:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk -X PUT -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/delegatedregistryconfig" \
+  -d '{
+    "enabledFor": "SPECIFIC",
+    "defaultClusterId": "",
+    "registries": [
+      {
+        "path": "image-registry.openshift-image-registry.svc:5000",
+        "clusterId": ""
+      }
+    ]
+  }'
+----
+
+NOTE: Replace the empty `clusterId` values with your actual secured cluster ID. You can get it with:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/clusters" | \
+  jq '.clusters[] | select(.name=="secured") | .id'
+----
+
+.Verify: Delegated scanning is configured
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/delegatedregistryconfig" | jq .
+----
+
+[.console-output]
+[source,bash]
+----
+{
+  "enabledFor": "SPECIFIC",
+  "registries": [
+    {
+      "path": "image-registry.openshift-image-registry.svc:5000",
+      "clusterId": "..."
+    }
+  ]
+}
+----
+====
+
+'''
+
+[#push-test-image]
+=== 3. Push a test image to the internal registry
+
+*What:* Build or push a container image into the secured cluster's internal OpenShift registry.
+
+*Why:* You need an image in the isolated registry that Scanner-slim can scan. This proves the delegated scanning flow works end to end.
+
+Create a namespace and an ImageStream, then import an image:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 03-airgapped-scanning/scan-test-namespace.yaml --context secured
+----
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc import-image test-app:latest \
+  --from=registry.access.redhat.com/ubi9/ubi-minimal:latest \
+  --confirm -n scan-test --context secured
+----
+
+Now deploy a pod from the internal registry image so ACS observes it:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 03-airgapped-scanning/test-deployment.yaml --context secured
+----
+
+.Verify: Pod is running with an image from the internal registry
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get pods -n scan-test --context secured -o wide
+----
+
+[.console-output]
+[source,bash]
+----
+NAME                        READY   STATUS    RESTARTS   AGE
+test-app-xxxxxxxxx-xxxxx    1/1     Running   0          30s
+----
+
+Check the image reference:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get deployment test-app -n scan-test --context secured \
+  -o jsonpath='{.spec.template.spec.containers[0].image}'; echo
+----
+
+It should show an `image-registry.openshift-image-registry.svc:5000/scan-test/test-app` reference.
+====
+
+'''
+
+[#verify-scan]
+=== 4. Verify scan results in ACS Central
+
+*What:* Confirm that ACS scanned the image through delegated scanning and vulnerability data is available.
+
+*Why:* This is the proof that the whole flow works: Central received scan results for an image it cannot reach directly.
+
+In the ACS console, go to Vulnerability Management > Workloads and search for the `scan-test` namespace. Click the `test-app` deployment to see its vulnerabilities.
+
+You can also check from the API:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/deployments?query=Namespace:scan-test" | \
+  jq '.deployments[] | {name: .name, imageCount: (.containers | length)}'
+----
+
+.Verify: Vulnerabilities are reported
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+DEPLOYMENT_ID=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/deployments?query=Namespace:scan-test" | \
+  jq -r '.deployments[0].id')
+
+curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/deployments/${DEPLOYMENT_ID}" | \
+  jq '.containers[0].image.scan.components | length'
+----
+
+[.console-output]
+[source,bash]
+----
+42
+----
+
+A non-zero component count confirms Scanner-slim indexed the image and Central matched it against the vulnerability database.
+====
+
+'''
+
+[#offline-vuln-db]
+=== 5. Update the vulnerability database offline
+
+*What:* Download the Scanner V4 vulnerability definitions on a connected workstation and upload them to Central.
+
+*Why:* In a real air-gapped environment, Central cannot fetch vulnerability updates from the internet. Without fresh definitions, scans will miss recently disclosed CVEs. This procedure keeps the database current.
+
+On a workstation with internet access, download the definitions:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+roxctl scanner download-db --scanner-db-file scanner-vuln-updates.zip
+----
+
+Transfer the file to a machine that can reach Central (via USB, S3 bucket, bastion host, or whatever method your air-gapped process allows). Then upload it:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" scanner upload-db \
+  --scanner-db-file scanner-vuln-updates.zip
+----
+
+.Verify: Vulnerability database is updated
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/metadata" | \
+  jq '{version: .version, buildTimestamp: .buildTimestamp}'
+----
+
+The Scanner picks up new definitions within 5 minutes. You can also trigger a rescan of the test deployment to confirm new CVEs appear:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" image scan \
+  --image "image-registry.openshift-image-registry.svc:5000/scan-test/test-app:latest" \
+  --cluster secured --output json | jq '.result.summary'
+----
+====
+
+IMPORTANT: In production air-gapped environments, automate this process. Download the definitions on a scheduled job on the connected side and transfer them through your approved data diode or cross-domain solution. Update at least once per day.
+
+'''
+
+== What this solves (compared to Steps 1 and 2)
+
+[cols="2,3",options="header"]
+|===
+| Problem from earlier steps | How this step solves it
+
+| Central cannot scan images in a registry it cannot reach
+| Delegated scanning through Scanner-slim on the secured cluster handles the scan locally
+
+| Vulnerability database goes stale in disconnected environments
+| Manual upload of definitions via `roxctl scanner upload-db` keeps the database current
+|===
+
+== Official documentation
+
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/operating/examine-images-for-vulnerabilities#delegated-image-scanning_examine-images-for-vulnerabilities[Delegated image scanning in RHACS 4.11]
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/configuring/enable-offline-mode[Enabling offline mode in RHACS 4.11]
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/installing/installing-using-operator[Installing RHACS using the Operator]
+
+== Alternatives considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| Delegated scanning with Scanner-slim (this workshop)
+| The standard approach for registries that Central cannot reach. Scanner-slim runs on the secured cluster and handles indexing locally. Works with the OpenShift internal registry and external registries accessible from the secured cluster.
+
+| Mirror the registry to a location Central can reach
+| Avoids delegated scanning entirely, but doubles storage and requires a sync process. Useful when you need Central to have full control over scanning.
+
+| Use Quay as a scanning registry
+| Quay has its own vulnerability scanner (Clair). You could scan images in Quay and integrate the results with ACS. Adds a dependency on Quay but keeps scanning independent of ACS.
+|===
+
+'''
+
+== Reset
+
+Remove the test workloads, the delegated scanning configuration, and the network restriction. Reverse order: remove workloads first, then configuration, then the network policy.
+
+[.console-input]
+[source,bash]
+----
+# Delete test workloads
+oc delete -f 03-airgapped-scanning/test-deployment.yaml --context secured --ignore-not-found
+oc delete -f 03-airgapped-scanning/scan-test-namespace.yaml --context secured --ignore-not-found --wait
+
+# Reset delegated scanning to "None" (default)
+curl -sk -X PUT -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/delegatedregistryconfig" \
+  -d '{"enabledFor": "NONE", "registries": []}'
+
+# Remove the network policy
+oc delete -f 03-airgapped-scanning/registry-network-policy.yaml --context secured --ignore-not-found
+
+# Remove the scanner vuln updates file
+rm -f scanner-vuln-updates.zip
+----

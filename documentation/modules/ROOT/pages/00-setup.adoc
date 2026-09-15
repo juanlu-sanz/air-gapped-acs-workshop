@@ -1,0 +1,480 @@
+= Cluster Setup
+include::_attributes.adoc[]
+
+This page walks you through the environment preparation: logging into two OpenShift clusters on AWS, installing ACS Central on the hub, registering the secured cluster, and installing the Compliance Operator. Every later step assumes these are done.
+
+== Prerequisites
+
+* Two OpenShift {ocp-version} clusters running on AWS (ROSA HCP or OCP IPI)
+* `oc` CLI ({ocp-version}) installed
+* `roxctl` CLI ({acs-version}) installed
+* `jq` and `curl` available
+* Cluster-admin access to both clusters
+* A workstation with internet access (for downloading CLI tools and vulnerability definitions)
+
+[#cluster-mapping]
+== Cluster mapping
+
+[cols="2,2,4",options="header"]
+|===
+| Role | Context name | Purpose
+
+| Hub cluster
+| `{hub-context}`
+| Runs ACS Central, Scanner V4, and Sensor
+
+| Secured cluster
+| `{secured-context}`
+| Simulated air-gapped cluster with internal registry, Scanner-slim, and Sensor
+|===
+
+== Option A: Pre-provisioned clusters (Demo Platform)
+
+If someone else provisioned the clusters for you, skip to <<option-b>>.
+
+=== 1. Gather cluster credentials
+
+*What:* Collect the API URLs and kubeadmin passwords for both clusters from the provisioning output or email.
+
+*Why:* You need these to log in and rename contexts.
+
+Locate the API server URLs and credentials for both clusters. They will look something like:
+
+[.console-output]
+[source,bash]
+----
+Hub API:     https://api.hub-cluster.example.com:6443
+Secured API: https://api.secured-cluster.example.com:6443
+----
+
+'''
+
+=== 2. Log in to both clusters
+
+*What:* Authenticate with `oc login` to both clusters and rename the contexts.
+
+*Why:* Named contexts let every command in the workshop target the right cluster without switching.
+
+[#login-clusters]
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc login --server=${HUB_API_URL} --username=kubeadmin --password=${HUB_PASSWORD}
+----
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc login --server=${SECURED_API_URL} --username=kubeadmin --password=${SECURED_PASSWORD}
+----
+
+'''
+
+[#rename-contexts]
+=== 3. Rename contexts
+
+*What:* Rename the kube contexts to `hub` and `secured`.
+
+*Why:* Every `oc` command in this workshop uses `--context hub` or `--context secured`. Renaming avoids long API-URL-based context names.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc config rename-context $(oc config current-context) secured
+----
+
+Switch to the hub cluster and rename it too:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc config use-context <hub-api-context-name>
+oc config rename-context $(oc config current-context) hub
+----
+
+.Verify: Both contexts exist
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc config get-contexts -o name
+----
+
+[.console-output]
+[source,bash]
+----
+hub
+secured
+----
+====
+
+'''
+
+[#option-b]
+== Option B: Quick login (clusters already configured)
+
+If the contexts `hub` and `secured` are already present in your kubeconfig, verify they work:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc whoami --context hub
+oc whoami --context secured
+----
+
+Both should return `kube:admin` or your user. If they do, skip ahead to <<export-variables>>.
+
+'''
+
+[#export-variables]
+== Export workshop variables
+
+Export the variables used throughout the workshop. Adjust the values if your environment differs.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+export HUB_API_URL=$(oc whoami --show-server --context hub)
+export SECURED_API_URL=$(oc whoami --show-server --context secured)
+export ACS_CENTRAL_ROUTE=$(oc get route central -n stackrox --context hub -o jsonpath='{.spec.host}')
+export ROX_API_TOKEN=""  # Set after generating the token in the ACS UI
+----
+
+[cols="2,2,4",options="header"]
+|===
+| Variable | Used in | Description
+
+| `HUB_API_URL`
+| `00-setup`
+| API server URL of the hub cluster
+
+| `SECURED_API_URL`
+| `00-setup`
+| API server URL of the secured cluster
+
+| `ACS_CENTRAL_ROUTE`
+| `01-reporting`, `02-compliance`, `03-airgapped-scanning`
+| External hostname of ACS Central
+
+| `ROX_API_TOKEN`
+| `01-reporting`, `03-airgapped-scanning`
+| API token for `roxctl` and API calls
+|===
+
+TIP: Save these exports to `myenv.sh` (gitignored) so you can re-source them later: `source myenv.sh`.
+
+'''
+
+[#install-acs]
+== Install ACS Central on the hub cluster
+
+=== 4. Install the RHACS Operator
+
+*What:* Install the RHACS Operator from OperatorHub on the hub cluster.
+
+*Why:* The Operator manages the Central and SecuredCluster custom resources.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 00-setup/acs-operator-subscription.yaml --context hub
+----
+
+Wait for the Operator to be ready:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc wait --for=condition=CatalogSourcesUnhealthy=False subscription/rhacs-operator \
+  -n rhacs-operator --context hub --timeout=300s
+----
+
+.Verify: Operator pod is running
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get csv -n rhacs-operator --context hub
+----
+
+[.console-output]
+[source,bash]
+----
+NAME                       DISPLAY                                      PHASE
+rhacs-operator.v4.11.x     RHACS Operator                               Succeeded
+----
+====
+
+'''
+
+=== 5. Create the Central instance
+
+*What:* Deploy the ACS Central custom resource in the `stackrox` namespace.
+
+*Why:* Central is the management plane: the UI, API, scanner, and database.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 00-setup/stackrox-namespace.yaml --context hub
+oc apply -f 00-setup/central.yaml --context hub
+----
+
+Wait for Central to be ready (this may take a few minutes):
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc wait --for=condition=Deployed central/stackrox-central-services \
+  -n stackrox --context hub --timeout=600s
+----
+
+.Verify: Central pods are running
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get pods -n stackrox --context hub
+----
+
+[.console-output]
+[source,bash]
+----
+NAME                          READY   STATUS    RESTARTS   AGE
+central-xxxxxxxxxx-xxxxx      1/1     Running   0          2m
+central-db-xxxxxxxxxx-xxxxx   1/1     Running   0          2m
+scanner-v4-xxxxxxxxx-xxxxx    1/1     Running   0          2m
+scanner-v4-db-xxxxxxx-xxxxx   1/1     Running   0          2m
+----
+====
+
+'''
+
+=== 6. Retrieve the admin password and Central route
+
+*What:* Get the initial admin password and the route to access the ACS console.
+
+*Why:* You need these to log in and generate an API token.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get secret central-htpasswd -n stackrox --context hub \
+  -o jsonpath='{.data.password}' | base64 -d; echo
+----
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+export ACS_CENTRAL_ROUTE=$(oc get route central -n stackrox --context hub -o jsonpath='{.spec.host}')
+echo "ACS Console: https://${ACS_CENTRAL_ROUTE}"
+----
+
+Log in at that URL with username `admin` and the password from above. Then generate an API token under Platform Configuration > Integrations > Authentication Tokens > API Token, and export it:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+export ROX_API_TOKEN="<paste-token-here>"
+----
+
+'''
+
+[#register-secured-cluster]
+== Register the secured cluster
+
+=== 7. Install the RHACS Operator on the secured cluster
+
+*What:* Install the same RHACS Operator on the secured cluster.
+
+*Why:* The Operator on the secured side manages the SecuredCluster CR (Sensor, Collector, Scanner-slim).
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 00-setup/acs-operator-subscription.yaml --context secured
+----
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc wait --for=condition=CatalogSourcesUnhealthy=False subscription/rhacs-operator \
+  -n rhacs-operator --context secured --timeout=300s
+----
+
+'''
+
+=== 8. Create an init bundle and deploy it
+
+*What:* Generate a cluster init bundle from Central and apply it to the secured cluster.
+
+*Why:* The init bundle contains TLS certificates that let the secured cluster authenticate with Central.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" central init-bundles generate secured-cluster \
+  --output-secrets secured-cluster-init-bundle.yaml
+----
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 00-setup/stackrox-namespace.yaml --context secured
+oc apply -f secured-cluster-init-bundle.yaml -n stackrox --context secured
+----
+
+'''
+
+=== 9. Deploy the SecuredCluster CR
+
+*What:* Create the SecuredCluster custom resource on the secured cluster, with Scanner-slim enabled.
+
+*Why:* This deploys Sensor, Collector (eBPF), Admission Controller, and Scanner-slim. Scanner-slim is needed later for delegated scanning.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 00-setup/secured-cluster.yaml --context secured
+----
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc wait --for=condition=Deployed securedcluster/stackrox-secured-cluster-services \
+  -n stackrox --context secured --timeout=600s
+----
+
+.Verify: Secured cluster pods are running
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get pods -n stackrox --context secured
+----
+
+[.console-output]
+[source,bash]
+----
+NAME                                  READY   STATUS    RESTARTS   AGE
+sensor-xxxxxxxxxx-xxxxx               1/1     Running   0          1m
+admission-control-xxxxxxxxx-xxxxx     1/1     Running   0          1m
+collector-xxxxx                       2/2     Running   0          1m
+scanner-v4-xxxxxxxxx-xxxxx            1/1     Running   0          1m
+scanner-v4-db-xxxxxxx-xxxxx           1/1     Running   0          1m
+----
+====
+
+.Verify: Cluster appears in ACS Central
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" cluster list
+----
+
+You should see both the hub and the secured cluster listed as healthy.
+====
+
+'''
+
+[#install-compliance-operator]
+== Install the Compliance Operator
+
+=== 10. Install the Compliance Operator on both clusters
+
+*What:* Subscribe to the Compliance Operator on both the hub and the secured cluster.
+
+*Why:* The Compliance Operator provides the CIS and STIG benchmark profiles that ACS uses for compliance scans.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 00-setup/compliance-operator-subscription.yaml --context hub
+oc apply -f 00-setup/compliance-operator-subscription.yaml --context secured
+----
+
+Wait for the operator to install on both clusters:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc wait --for=condition=CatalogSourcesUnhealthy=False subscription/compliance-operator \
+  -n openshift-compliance --context hub --timeout=300s
+oc wait --for=condition=CatalogSourcesUnhealthy=False subscription/compliance-operator \
+  -n openshift-compliance --context secured --timeout=300s
+----
+
+.Verify: Compliance profiles are available
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get profiles.compliance -n openshift-compliance --context hub
+----
+
+[.console-output]
+[source,bash]
+----
+NAME                    AGE
+ocp4-cis                2m
+ocp4-cis-node           2m
+ocp4-stig               2m
+ocp4-stig-node          2m
+rhcos4-stig             2m
+...
+----
+====
+
+'''
+
+[#clone-repo]
+== Clone the workshop repository
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+git clone https://github.com/juanlu-redhat/air-gapped-acs-workshop.git
+cd air-gapped-acs-workshop
+----
+
+'''
+
+== Reset
+
+To undo the full setup and start from scratch, remove ACS and the Compliance Operator from both clusters. Run the commands in reverse order.
+
+[.console-input]
+[source,bash]
+----
+# Remove SecuredCluster from the secured cluster
+oc delete securedcluster stackrox-secured-cluster-services -n stackrox --context secured --ignore-not-found --wait
+
+# Remove init bundle secrets
+oc delete secret -l app.kubernetes.io/name=stackrox -n stackrox --context secured --ignore-not-found
+
+# Remove Central from the hub
+oc delete central stackrox-central-services -n stackrox --context hub --ignore-not-found --wait
+
+# Remove stackrox namespace from both clusters
+oc delete namespace stackrox --context secured --ignore-not-found --wait
+oc delete namespace stackrox --context hub --ignore-not-found --wait
+
+# Remove Compliance Operator subscription and namespace
+oc delete subscription compliance-operator -n openshift-compliance --context hub --ignore-not-found
+oc delete subscription compliance-operator -n openshift-compliance --context secured --ignore-not-found
+oc delete csv -l operators.coreos.com/compliance-operator.openshift-compliance -n openshift-compliance --context hub --ignore-not-found
+oc delete csv -l operators.coreos.com/compliance-operator.openshift-compliance -n openshift-compliance --context secured --ignore-not-found
+
+# Remove RHACS Operator subscription
+oc delete subscription rhacs-operator -n rhacs-operator --context hub --ignore-not-found
+oc delete subscription rhacs-operator -n rhacs-operator --context secured --ignore-not-found
+oc delete csv -l operators.coreos.com/rhacs-operator.rhacs-operator -n rhacs-operator --context hub --ignore-not-found
+oc delete csv -l operators.coreos.com/rhacs-operator.rhacs-operator -n rhacs-operator --context secured --ignore-not-found
+----

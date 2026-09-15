@@ -1,0 +1,21 @@
+# tailored-profile-cis.yaml
+# Purpose: Create a customized CIS compliance profile that disables a specific rule
+# and documents the rationale for the exception
+apiVersion: compliance.openshift.io/v1alpha1
+kind: TailoredProfile
+metadata:
+  name: cis-custom
+  namespace: openshift-compliance
+  labels:
+    app.kubernetes.io/part-of: acs-workshop
+spec:
+  title: CIS Custom - Workshop Example
+  description: >-
+    Extends the ocp4-cis profile with organization-specific exceptions.
+    Disables the ETCD encryption check as an example of a documented deviation.
+  extends: ocp4-cis
+  disableRules:
+    - name: ocp4-api-server-encryption-provider-config
+      rationale: >-
+        ETCD encryption is managed at the infrastructure level by the cloud provider
+        in this workshop environment and is not configurable through the API server.

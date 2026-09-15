@@ -1,0 +1,6 @@
+name: air-gapped-acs-workshop
+title: "RHACS: Reporting, Compliance, and Air-Gapped Scanning"
+version: master
+nav:
+  - modules/ROOT/nav.adoc
+start_page: ROOT:index.adoc

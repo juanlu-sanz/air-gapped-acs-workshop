@@ -1,0 +1,32 @@
+# compliance-operator-subscription.yaml
+# Purpose: Subscribe to the Compliance Operator from OperatorHub
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openshift-compliance
+  labels:
+    app.kubernetes.io/part-of: acs-workshop
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: compliance-operator
+  namespace: openshift-compliance
+spec:
+  targetNamespaces:
+    - openshift-compliance
+  upgradeStrategy: Default
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: compliance-operator
+  namespace: openshift-compliance
+  labels:
+    app.kubernetes.io/part-of: acs-workshop
+spec:
+  channel: stable
+  installPlanApproval: Automatic
+  name: compliance-operator
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace

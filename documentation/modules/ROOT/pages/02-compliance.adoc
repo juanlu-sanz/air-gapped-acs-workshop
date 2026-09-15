@@ -1,0 +1,284 @@
+= Step 2 - Compliance: CIS, STIG, and tailored profiles
+include::_attributes.adoc[]
+
+The Compliance Operator scans OpenShift clusters against security benchmarks such as CIS and STIG. ACS integrates with it to schedule scans, display results in a single dashboard across clusters, and support tailored profiles that adapt the benchmarks to your organization. This step sets up compliance scans and a custom tailored profile.
+
+== Prerequisites
+
+* Compliance Operator installed on both clusters from xref:00-setup.adoc#install-compliance-operator[Cluster Setup]
+* ACS Central running and both clusters registered
+* `ROX_API_TOKEN` and `ACS_CENTRAL_ROUTE` exported
+
+NOTE: The Compliance Operator may take a few minutes after installation to parse all profile bundles. If the profiles do not appear in ACS, wait and refresh.
+
+== How it works
+
+The Compliance Operator ships with ProfileBundles that contain compliance profiles (CIS, STIG, and others). Each profile defines a set of checks for either the platform (Kubernetes API resources) or nodes (RHCOS configuration). You can run scans directly through the Compliance Operator CRs, but ACS adds a layer on top: it discovers all available profiles from every secured cluster, lets you schedule scans from a single UI, and aggregates the results into a coverage dashboard.
+
+Tailored profiles let you modify a built-in profile by enabling or disabling specific rules or setting custom variable values. ACS {acs-version} detects tailored profiles automatically and includes them alongside built-in profiles in scan schedules.
+
+== Steps to apply
+
+[#compliance-overview]
+=== 1. View compliance profiles in ACS
+
+*What:* Open the ACS compliance section and confirm that profiles from both clusters are visible.
+
+*Why:* This verifies that the Compliance Operator is correctly integrated with ACS and profiles are synced.
+
+In the ACS console, navigate to Compliance > Coverage. You should see the clusters listed with their available profiles.
+
+You can also check from the CLI:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/compliance/profiles" | \
+  jq '.profiles[] | {name: .name, title: .title, profileVersion: .profileVersion}'
+----
+
+.Verify: Profiles are listed
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+{
+  "name": "ocp4-cis",
+  "title": "CIS OpenShift Container Platform 4 Benchmark",
+  "profileVersion": "1.5.0"
+}
+{
+  "name": "ocp4-stig",
+  "title": "DISA STIG for Red Hat OpenShift Container Platform 4",
+  "profileVersion": "..."
+}
+...
+----
+====
+
+'''
+
+[#profiles]
+=== 2. Understand CIS and STIG profiles
+
+*What:* Review the two primary compliance standards relevant to this environment.
+
+*Why:* Knowing what each benchmark covers helps you pick the right profiles for your scan schedule.
+
+[cols="2,3,3",options="header"]
+|===
+| Standard | Profile names | What it covers
+
+| CIS (Center for Internet Security)
+| `ocp4-cis`, `ocp4-cis-node`
+| General security hardening for Kubernetes API resources and RHCOS nodes. Widely adopted as a baseline across industries.
+
+| STIG (Security Technical Implementation Guide)
+| `ocp4-stig`, `ocp4-stig-node`, `rhcos4-stig`
+| DISA requirements for U.S. Department of Defense and NATO-aligned environments. Stricter than CIS on areas like audit logging, FIPS, and session controls.
+|===
+
+For air-gapped and defense environments, STIG is typically the primary standard. CIS provides a good complementary baseline. You can run both in the same scan schedule.
+
+'''
+
+[#schedule-scan]
+=== 3. Schedule a compliance scan from ACS
+
+*What:* Create a scan schedule in ACS that runs CIS and STIG profiles on both clusters.
+
+*Why:* Scheduled scans provide continuous compliance monitoring without manual intervention.
+
+In the ACS console, go to Compliance > Schedules and click "Create scan schedule":
+
+* Name: `weekly-cis-stig`
+* Clusters: Select both `hub` and `secured`
+* Profiles: Select `ocp4-cis`, `ocp4-cis-node`, `ocp4-stig`, `ocp4-stig-node`
+* Frequency: Weekly
+* Day: Sunday
+* Time: 02:00 UTC
+
+Click Save.
+
+To run it now instead of waiting for the schedule, click "Run scan" on the schedule you created.
+
+.Verify: Scan schedule exists and runs
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/compliance/scan/configurations" | \
+  jq '.configurations[] | {name: .scanName, clusters: .clusters}'
+----
+
+[.console-output]
+[source,bash]
+----
+{
+  "name": "weekly-cis-stig",
+  "clusters": ["hub-cluster-id", "secured-cluster-id"]
+}
+----
+====
+
+'''
+
+[#tailored-profile]
+=== 4. Create a tailored profile
+
+*What:* Create a TailoredProfile CR on the secured cluster that extends the CIS benchmark and disables a specific rule.
+
+*Why:* Organizations rarely adopt a benchmark without changes. Tailored profiles let you document and enforce approved deviations. For example, you may need to disable a check that conflicts with your infrastructure or is handled by a different control.
+
+Apply the tailored profile:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 02-compliance/tailored-profile-cis.yaml --context secured
+----
+
+Wait for the profile to be parsed:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc wait --for=condition=Ready tailoredprofile/cis-custom \
+  -n openshift-compliance --context secured --timeout=120s
+----
+
+.Verify: Tailored profile appears in ACS
+[%collapsible]
+====
+After the Compliance Operator parses the tailored profile, ACS detects it. Navigate to Compliance > Coverage and look for the "Tailored Profiles" tab. The `cis-custom` profile should appear there.
+
+You can also check via API:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/compliance/profiles" | \
+  jq '.profiles[] | select(.name | contains("cis-custom"))'
+----
+====
+
+'''
+
+=== 5. Include the tailored profile in a scan schedule
+
+*What:* Create or edit a scan schedule to include the `cis-custom` tailored profile alongside built-in profiles.
+
+*Why:* Running the tailored profile through ACS gives you a single view of both standard and customized compliance results.
+
+In the ACS console, go to Compliance > Schedules. Either create a new schedule or edit the existing `weekly-cis-stig`. In the profile selection, you should see the `cis-custom` profile with a "Tailored" type tag. Select it alongside the other profiles.
+
+.Verify: Scan results include the tailored profile
+[%collapsible]
+====
+After running the scan, go to Compliance > Coverage. Click the secured cluster. The results should show checks from both the built-in CIS profile and the `cis-custom` tailored profile.
+
+NOTE: Tailored profiles with the same name on different clusters can produce different check counts because each cluster manages its own TailoredProfile resource independently.
+====
+
+'''
+
+[#coverage-dashboard]
+=== 6. Review the compliance coverage dashboard
+
+*What:* Walk through the compliance coverage page in ACS.
+
+*Why:* The coverage dashboard is the primary view for assessing where your clusters stand against each benchmark.
+
+Navigate to Compliance > Coverage in the ACS console. The dashboard shows:
+
+* Clusters grouped by compliance profile
+* Per-cluster pass/fail/error/not-applicable counts
+* A "Tailored Profiles" tab for any tailored profiles detected across clusters
+
+For each failing check, you can click through to see:
+
+* The rule description and rationale
+* The actual value found on the cluster
+* Remediation guidance from the benchmark
+
+TIP: Download the results as CSV from the Coverage page for offline analysis or sharing with auditors.
+
+'''
+
+== What this solves (compared to Step 1)
+
+[cols="2,3",options="header"]
+|===
+| Problem from Step 1 | How this step solves it
+
+| No compliance benchmarks configured
+| CIS and STIG profiles are now scanning both clusters on a weekly schedule
+
+| Generic compliance posture
+| Tailored profiles adapt the benchmarks to your specific requirements and document approved exceptions
+|===
+
+== What this does NOT solve (yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining problem | Addressed in
+
+| Central cannot scan images in a registry it cannot reach
+| xref:03-airgapped-scanning.adoc[Step 3: Air-gapped scanning]
+|===
+
+== Official documentation
+
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/operating/managing-compliance[Managing compliance in RHACS 4.11]
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.15/html/security_and_compliance/compliance-operator[Compliance Operator in OpenShift 4.15]
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/release_notes/release-notes-411#support-for-compliance-operator-tailored-profiles-scheduling-and-maintenance_release-notes-411[Tailored profile support in RHACS 4.11 release notes]
+
+== Alternatives considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| Compliance Operator with ACS integration (this workshop)
+| Combines the Compliance Operator's scanning engine with ACS's multi-cluster dashboard, scheduling, and tailored profile support. Requires both ACS and the Compliance Operator.
+
+| Compliance Operator standalone (no ACS)
+| You can run scans and view results through `oc get compliancecheckresults`. Works without ACS but lacks multi-cluster aggregation, scheduled scans from a central UI, and the coverage dashboard.
+
+| Third-party compliance tools
+| Tools like Nessus or Qualys can scan OpenShift nodes, but they do not understand Kubernetes API resources or the Compliance Operator's OpenSCAP profiles natively.
+|===
+
+'''
+
+== Reset
+
+Remove the tailored profile and the scan schedule.
+
+The order matters: delete the scan schedule first so it does not reference the tailored profile during cleanup.
+
+[.console-input]
+[source,bash]
+----
+# Delete the scan schedule via ACS API
+SCAN_CONFIG_ID=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/compliance/scan/configurations" | \
+  jq -r '.configurations[] | select(.scanName=="weekly-cis-stig") | .id')
+
+if [ -n "${SCAN_CONFIG_ID}" ]; then
+  curl -sk -X DELETE -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+    "https://${ACS_CENTRAL_ROUTE}/v2/compliance/scan/configurations/${SCAN_CONFIG_ID}"
+fi
+
+# Delete the tailored profile from the secured cluster
+oc delete -f 02-compliance/tailored-profile-cis.yaml --context secured --ignore-not-found
+
+# Delete the ScanSettingBinding if created manually
+oc delete -f 02-compliance/scan-setting-binding.yaml --context secured --ignore-not-found
+----

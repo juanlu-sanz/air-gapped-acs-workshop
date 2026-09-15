@@ -1,0 +1,32 @@
+# test-deployment.yaml
+# Purpose: Deploy a pod using an image from the internal registry to trigger
+# delegated scanning through Scanner-slim
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-app
+  namespace: scan-test
+  labels:
+    app: test-app
+    app.kubernetes.io/part-of: acs-workshop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-app
+  template:
+    metadata:
+      labels:
+        app: test-app
+    spec:
+      containers:
+        - name: test-app
+          image: image-registry.openshift-image-registry.svc:5000/scan-test/test-app:latest
+          command: ["sleep", "infinity"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi

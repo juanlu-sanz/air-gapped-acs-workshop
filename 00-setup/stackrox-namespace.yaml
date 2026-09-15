@@ -1,0 +1,8 @@
+# stackrox-namespace.yaml
+# Purpose: Create the stackrox namespace for ACS components
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: stackrox
+  labels:
+    app.kubernetes.io/part-of: acs-workshop

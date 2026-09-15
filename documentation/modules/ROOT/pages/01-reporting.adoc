@@ -1,0 +1,333 @@
+= Step 1 - Reporting: Vulnerability and compliance reports in ACS
+include::_attributes.adoc[]
+
+ACS collects vulnerability and compliance data from every secured cluster. This step shows how to turn that data into scheduled reports, read them with a risk or security team, and pull the same data through the API for external dashboards.
+
+== Prerequisites
+
+* ACS Central running on the hub cluster from xref:00-setup.adoc[Cluster Setup]
+* At least one secured cluster registered and healthy
+* `ROX_API_TOKEN` and `ACS_CENTRAL_ROUTE` exported as described in xref:00-setup.adoc#export-variables[Export Workshop Variables]
+
+NOTE: The secured cluster should have at least a few running workloads so the reports contain data. If nothing is deployed yet, create a quick test namespace with a sample deployment:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc create namespace demo-workloads --context secured
+oc create deployment nginx --image=registry.access.redhat.com/ubi9/nginx-122 -n demo-workloads --context secured
+----
+
+== How it works
+
+ACS generates two kinds of reports:
+
+* Vulnerability reports summarize CVEs across images, deployments, or namespaces. You can filter by severity, fixability, and scope (specific clusters, namespaces, or all).
+* Compliance reports show the pass/fail status of checks from the Compliance Operator profiles configured in xref:02-compliance.adoc[Step 2].
+
+Both can be downloaded as CSV, emailed on a schedule, or retrieved through the REST API.
+
+== Steps to apply
+
+[#vulnerability-report]
+=== 1. Create a vulnerability report
+
+*What:* Create a vulnerability report configuration in the ACS UI that covers the secured cluster.
+
+*Why:* A reusable report configuration lets you generate consistent snapshots of your vulnerability posture at any time.
+
+Open the ACS console at `https://${ACS_CENTRAL_ROUTE}` and navigate to Vulnerability Management > Reporting.
+
+Click "Create report" and fill in:
+
+* Name: `secured-cluster-vulns`
+* Description: `Vulnerability report for the secured cluster`
+* CVE severity: Critical, Important
+* CVE status: Fixable
+* Scope: Select the `secured` cluster
+
+Click Save. The report configuration is now available.
+
+.Verify: Report configuration exists
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/reports/configurations" | jq '.reportConfigs[].name'
+----
+
+[.console-output]
+[source,bash]
+----
+"secured-cluster-vulns"
+----
+====
+
+'''
+
+=== 2. Generate and download a report
+
+*What:* Run the report on demand and download it as CSV.
+
+*Why:* On-demand generation lets you get a current snapshot before a meeting or audit without waiting for the schedule.
+
+In the ACS UI, go to Vulnerability Management > Reporting, click the `secured-cluster-vulns` report, and click "Generate report". Once the report completes, click "Download" to get the CSV file.
+
+You can also trigger the report from the API:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+# Get the report config ID
+REPORT_CONFIG_ID=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/reports/configurations" | \
+  jq -r '.reportConfigs[] | select(.name=="secured-cluster-vulns") | .id')
+
+# Trigger the report
+curl -sk -X POST -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/reports/run" \
+  -d "{\"reportConfigId\": \"${REPORT_CONFIG_ID}\"}"
+----
+
+.Verify: Report was generated
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/reports/jobs?reportConfigId=${REPORT_CONFIG_ID}" | \
+  jq '.reportJobs[0].status'
+----
+
+[.console-output]
+[source,bash]
+----
+"COMPLETED"
+----
+====
+
+'''
+
+[#schedule-report]
+=== 3. Schedule recurring reports
+
+*What:* Configure the report to run weekly and deliver results by email.
+
+*Why:* Scheduled reports give the risk team a predictable cadence of vulnerability data without manual intervention.
+
+Edit the `secured-cluster-vulns` report configuration in the ACS UI. Under "Delivery schedule":
+
+* Frequency: Weekly
+* Day: Monday
+* Time: 08:00 UTC
+
+Under "Delivery destinations", add an email notifier (requires an email integration configured under Platform Configuration > Integrations > Email).
+
+You can also set the schedule via API:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk -X PATCH -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/reports/configurations/${REPORT_CONFIG_ID}" \
+  -d '{
+    "schedule": {
+      "intervalType": "WEEKLY",
+      "hour": 8,
+      "minute": 0,
+      "daysOfWeek": { "days": [1] }
+    }
+  }'
+----
+
+.Verify: Schedule is set
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/reports/configurations/${REPORT_CONFIG_ID}" | \
+  jq '.schedule'
+----
+
+[.console-output]
+[source,bash]
+----
+{
+  "intervalType": "WEEKLY",
+  "hour": 8,
+  "minute": 0,
+  "daysOfWeek": {
+    "days": [1]
+  }
+}
+----
+====
+
+'''
+
+[#interpret-report]
+=== 4. Interpret the report for a risk team
+
+*What:* Walk through the CSV columns and explain what the risk team needs to focus on.
+
+*Why:* A raw CSV full of CVEs is hard to act on. Explaining which columns map to what decisions helps the risk team prioritize.
+
+The vulnerability report CSV contains these columns:
+
+[cols="2,4",options="header"]
+|===
+| Column | What it tells you
+
+| CVE
+| The CVE identifier (e.g., CVE-2024-1234)
+
+| CVSS Score
+| Severity rating from 0 to 10
+
+| Severity
+| Critical, Important, Moderate, or Low
+
+| Component
+| The vulnerable software component (library, package)
+
+| Component Version
+| Currently installed version
+
+| Fixed In Version
+| The version that fixes the CVE (empty if no fix exists)
+
+| Image
+| The container image containing the component
+
+| Deployment
+| Which deployment uses the image
+
+| Namespace
+| The namespace where the deployment runs
+
+| Cluster
+| Which cluster the deployment is on
+|===
+
+When presenting to a risk team:
+
+* Filter the CSV by "Critical" severity and non-empty "Fixed In Version". These are the items where a fix exists and the risk is highest.
+* Group by namespace to identify which teams own the affected workloads.
+* Track the "Fixed In Version" column across reports to measure remediation progress week over week.
+
+'''
+
+[#api-export]
+=== 5. Export data via API for external dashboards
+
+*What:* Query the ACS API for vulnerability data and feed it into an external tool (e.g., Grafana, a BI dashboard, or a custom script).
+
+*Why:* Some organizations need a single pane of glass that combines ACS data with metrics from other sources.
+
+ACS exposes vulnerability data through the `/v1/` and `/v2/` REST APIs. Here are common queries:
+
+Fetch all critical CVEs with available fixes:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/images/vulnerabilities?query=Severity:CRITICAL_VULNERABILITY_SEVERITY%2BFixable:true" | \
+  jq '.imageVulnerabilities | length'
+----
+
+Fetch deployment-level vulnerability counts:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/deploymentscount?query=Severity:CRITICAL_VULNERABILITY_SEVERITY" | jq .
+----
+
+ACS also exports Prometheus metrics. If you have Prometheus and Grafana running, you can scrape the `/metrics` endpoint from Central and build dashboards for:
+
+* Total CVEs by severity over time
+* Fix rate (how quickly CVEs get patched after a fix becomes available)
+* Compliance pass rate per cluster
+
+TIP: The ACS Prometheus metrics endpoint is at `https://${ACS_CENTRAL_ROUTE}/metrics`. Configure your Prometheus instance to scrape it using a bearer token for authentication.
+
+'''
+
+== What this solves
+
+[cols="2,3",options="header"]
+|===
+| Problem | How this step solves it
+
+| No visibility into vulnerability posture
+| Scheduled reports deliver a current snapshot weekly
+
+| Risk team cannot read raw scan data
+| CSV format with clear columns that map to action items
+
+| Data is siloed in the ACS UI
+| API access and Prometheus metrics feed external dashboards
+|===
+
+== What this does NOT solve (yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining problem | Addressed in
+
+| No compliance benchmarks are configured
+| xref:02-compliance.adoc[Step 2: Compliance]
+
+| Central cannot scan images in air-gapped registries
+| xref:03-airgapped-scanning.adoc[Step 3: Air-gapped scanning]
+|===
+
+== Official documentation
+
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/operating/managing-vulnerabilities[Managing vulnerabilities in RHACS 4.11]
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/operating/managing-compliance[Managing compliance in RHACS 4.11]
+
+== Alternatives considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| ACS built-in reports (this workshop)
+| Covers most use cases out of the box. CSV export and email scheduling require no extra infrastructure.
+
+| Custom scripts using the ACS API
+| More flexible filtering and formatting, but requires maintaining scripts. Use when the built-in reports do not cover your exact needs.
+
+| Grafana dashboards via Prometheus metrics
+| Good for real-time monitoring and combining ACS data with other cluster metrics. Requires a Prometheus + Grafana stack.
+|===
+
+'''
+
+== Reset
+
+Remove the demo workloads and the report configuration.
+
+[.console-input]
+[source,bash]
+----
+# Delete the demo workloads namespace
+oc delete namespace demo-workloads --context secured --ignore-not-found --wait
+
+# Delete the report configuration via API
+REPORT_CONFIG_ID=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/reports/configurations" | \
+  jq -r '.reportConfigs[] | select(.name=="secured-cluster-vulns") | .id')
+
+curl -sk -X DELETE -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/reports/configurations/${REPORT_CONFIG_ID}"
+----
