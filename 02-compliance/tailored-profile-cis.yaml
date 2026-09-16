@@ -11,11 +11,11 @@ metadata:
 spec:
   title: CIS Custom - Workshop Example
   description: >-
-    Extends the ocp4-cis profile with organization-specific exceptions.
-    Disables the ETCD encryption check as an example of a documented deviation.
-  extends: ocp4-cis
+    Extends the ocp4-cis-node profile with organization-specific exceptions.
+    Disables the ETCD unique CA check as an example of a documented deviation.
+  extends: ocp4-cis-node
   disableRules:
-    - name: ocp4-api-server-encryption-provider-config
+    - name: ocp4-etcd-unique-ca
       rationale: >-
-        ETCD encryption is managed at the infrastructure level by the cloud provider
-        in this workshop environment and is not configurable through the API server.
+        ETCD CA management is handled at the infrastructure level by the cloud provider
+        in this ROSA HCP workshop environment and is not configurable through the nodes.

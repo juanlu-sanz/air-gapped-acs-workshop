@@ -16,7 +16,7 @@ variable "cluster_prefix" {
 variable "ocp_version" {
   description = "OpenShift version for ROSA HCP clusters"
   type        = string
-  default     = "4.15.20"
+  default     = "4.17.14"
 }
 
 variable "rosa_token" {
@@ -37,16 +37,27 @@ variable "secured_compute_nodes" {
   default     = 2
 }
 
-variable "compute_machine_type" {
-  description = "EC2 instance type for compute nodes"
+variable "hub_compute_machine_type" {
+  description = "EC2 instance type for hub cluster compute nodes (needs extra capacity for ACS Central)"
+  type        = string
+  default     = "m5.2xlarge"
+}
+
+variable "secured_compute_machine_type" {
+  description = "EC2 instance type for secured cluster compute nodes"
   type        = string
   default     = "m5.xlarge"
 }
 
 variable "availability_zones" {
-  description = "Availability zones for the clusters"
+  description = "Availability zones for the clusters (single AZ keeps costs low for demos)"
   type        = list(string)
   default     = ["eu-west-1a"]
+}
+
+variable "aws_billing_account_id" {
+  description = "AWS billing account ID for ROSA HCP clusters"
+  type        = string
 }
 
 variable "tags" {

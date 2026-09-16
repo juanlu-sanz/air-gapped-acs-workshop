@@ -1,11 +1,15 @@
 # terraform.tfvars.example
-# Purpose: Example variable values - copy to terraform.tfvars and fill in
+# Purpose: Non-secret variable overrides. Copy to terraform.tfvars and edit.
+#
+# SENSITIVE VALUES (rosa_token, aws_billing_account_id, AWS credentials)
+# are passed via environment variables from myenv.sh - never put them here.
+# Run:  source ../myenv.sh   before terraform plan/apply.
 
-aws_region            = "eu-west-1"
-cluster_prefix        = "acs-workshop"
-ocp_version           = "4.15.20"
-rosa_token            = "your-ocm-token-here"
-hub_compute_nodes     = 2
-secured_compute_nodes = 2
-compute_machine_type  = "m5.xlarge"
-availability_zones    = ["eu-west-1a"]
+aws_region                   = "eu-west-1"
+cluster_prefix               = "acs-workshop"
+ocp_version                  = "4.17.14"
+hub_compute_nodes            = 2
+secured_compute_nodes        = 2
+hub_compute_machine_type     = "m5.2xlarge"
+secured_compute_machine_type = "m5.xlarge"
+availability_zones           = ["eu-west-1a"]

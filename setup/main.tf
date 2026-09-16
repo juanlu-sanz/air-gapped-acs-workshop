@@ -17,6 +17,8 @@ module "hub_vpc" {
   single_nat_gateway   = true
   enable_dns_hostnames = true
   enable_dns_support   = true
+
+  tags = var.tags
 }
 
 # Networking for secured cluster
@@ -35,50 +37,58 @@ module "secured_vpc" {
   single_nat_gateway   = true
   enable_dns_hostnames = true
   enable_dns_support   = true
+
+  tags = var.tags
 }
 
 # ROSA HCP cluster: hub
+# Uses a larger instance type to accommodate ACS Central, Scanner V4, and Central DB.
 resource "rhcs_cluster_rosa_hcp" "hub" {
-  name                = "${var.cluster_prefix}-hub"
-  version             = var.ocp_version
-  cloud_region        = var.aws_region
-  availability_zones  = var.availability_zones
-  replicas            = var.hub_compute_nodes
-  compute_machine_type = var.compute_machine_type
+  name                 = "${var.cluster_prefix}-hub"
+  version              = var.ocp_version
+  cloud_region         = var.aws_region
+  availability_zones   = var.availability_zones
+  replicas             = var.hub_compute_nodes
+  compute_machine_type = var.hub_compute_machine_type
 
   aws_subnet_ids = concat(
     module.hub_vpc.private_subnets,
     module.hub_vpc.public_subnets
   )
 
+  aws_billing_account_id = var.aws_billing_account_id
+
   sts = {
-    enabled = true
+    enabled   = true
     auto_mode = true
   }
 
-  wait_for_create_complete     = true
+  wait_for_create_complete            = true
   wait_for_std_compute_nodes_complete = true
 }
 
 # ROSA HCP cluster: secured
+# Runs Sensor, Collector, Scanner-slim, and the Compliance Operator.
 resource "rhcs_cluster_rosa_hcp" "secured" {
-  name                = "${var.cluster_prefix}-secured"
-  version             = var.ocp_version
-  cloud_region        = var.aws_region
-  availability_zones  = var.availability_zones
-  replicas            = var.secured_compute_nodes
-  compute_machine_type = var.compute_machine_type
+  name                 = "${var.cluster_prefix}-secured"
+  version              = var.ocp_version
+  cloud_region         = var.aws_region
+  availability_zones   = var.availability_zones
+  replicas             = var.secured_compute_nodes
+  compute_machine_type = var.secured_compute_machine_type
 
   aws_subnet_ids = concat(
     module.secured_vpc.private_subnets,
     module.secured_vpc.public_subnets
   )
 
+  aws_billing_account_id = var.aws_billing_account_id
+
   sts = {
-    enabled = true
+    enabled   = true
     auto_mode = true
   }
 
-  wait_for_create_complete     = true
+  wait_for_create_complete            = true
   wait_for_std_compute_nodes_complete = true
 }
