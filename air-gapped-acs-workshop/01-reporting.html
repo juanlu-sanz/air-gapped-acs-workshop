@@ -266,6 +266,62 @@ The secured cluster should have at least a few running workloads so the reports 
 <div class="paragraph">
 <p>Click Save. The report configuration is now available.</p>
 </div>
+<div class="paragraph">
+<p>You can also create the report entirely through the API. The v2 report API requires a <code>resourceScope</code> backed by a <em>collection</em>. First, create a collection that scopes to the secured cluster, then create the report config that references it:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Get the secured cluster ID
+SECURED_CLUSTER_ID=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/clusters" | \
+  jq -r '.clusters[] | select(.name=="secured") | .id')
+
+# Create a collection scoped to the secured cluster
+COLLECTION_ID=$(curl -sk -X POST -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/collections" \
+  -d "{
+    \"name\": \"secured-cluster-scope\",
+    \"description\": \"All deployments in the secured cluster\",
+    \"resourceSelectors\": [{
+      \"rules\": [{
+        \"fieldName\": \"Cluster\",
+        \"operator\": \"OR\",
+        \"values\": [{\"value\": \"secured\", \"matchType\": \"EXACT\"}]
+      }]
+    }]
+  }" | jq -r '.collection.id')
+
+# Create the report configuration with the collection as resource scope
+curl -sk -X POST -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/reports/configurations" \
+  -d "{
+    \"name\": \"secured-cluster-vulns\",
+    \"description\": \"Vulnerability report for the secured cluster\",
+    \"vulnReportFilters\": {
+      \"severities\": [\"CRITICAL_VULNERABILITY_SEVERITY\", \"IMPORTANT_VULNERABILITY_SEVERITY\"],
+      \"fixability\": \"FIXABLE\",
+      \"imageTypes\": [\"DEPLOYED\"]
+    },
+    \"resourceScope\": {
+      \"collectionScope\": {\"collectionId\": \"${COLLECTION_ID}\"}
+    }
+  }"</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The collections API is at <code>/v1/collections</code> (not <code>/v2</code>). The collection ID is required by the v2 report configuration endpoint to define the resource scope. Without it the API returns a <em>"must specify a valid resource scope"</em> error.
+</td>
+</tr>
+</table>
+</div>
 <details>
 <summary class="title">Verify: Report configuration exists</summary>
 <div class="content">

@@ -586,14 +586,36 @@ echo "ACS Console: <a href="https://${ACS_CENTRAL_ROUTE}"" class="bare">https://
 <div class="paragraph">
 <p><strong>What:</strong> Generate a cluster init bundle from Central and apply it to the secured cluster.</p>
 </div>
-<div class="paragraph">
-<p><strong>Why:</strong> The init bundle contains TLS certificates that let the secured cluster authenticate with Central.</p>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+The init bundle contains TLS certificates tied to this specific Central instance. If you tear down and recreate Central, you must generate a new init bundle. The file is gitignored to prevent stale bundles from being committed.
+</td>
+</tr>
+</table>
 </div>
 <div class="listingblock console-input">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" central init-bundles generate secured-cluster \
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" --insecure-skip-tls-verify \
+  central init-bundles generate secured-cluster \
   --output-secrets secured-cluster-init-bundle.yaml</code></pre>
 </div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The <code>--insecure-skip-tls-verify</code> flag is needed because Central uses a self-signed TLS certificate. In production, configure <code>roxctl</code> to trust the Central CA instead.
+</td>
+</tr>
+</table>
 </div>
 <div class="listingblock console-input">
 <div class="content">
@@ -611,9 +633,13 @@ oc apply -f secured-cluster-init-bundle.yaml -n stackrox --context secured</code
 <div class="paragraph">
 <p><strong>Why:</strong> This deploys Sensor, Collector (eBPF), Admission Controller, and Scanner-slim. Scanner-slim is needed later for delegated scanning.</p>
 </div>
+<div class="paragraph">
+<p>The SecuredCluster manifest contains <code>${ACS_CENTRAL_ENDPOINT}</code> which must be replaced with the Central route before applying. Use <code>envsubst</code>:</p>
+</div>
 <div class="listingblock console-input">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 00-setup/secured-cluster.yaml --context secured</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export ACS_CENTRAL_ENDPOINT="${ACS_CENTRAL_ROUTE}"
+envsubst &lt; 00-setup/secured-cluster.yaml | oc apply --context secured -f -</code></pre>
 </div>
 </div>
 <div class="listingblock console-input">
@@ -647,7 +673,7 @@ scanner-v4-db-xxxxxxx-xxxxx           1/1     Running   0          1m</code></pr
 <div class="content">
 <div class="listingblock console-input">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" cluster list</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" --insecure-skip-tls-verify cluster list</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -720,6 +746,18 @@ rhcos4-stig             2m
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">git clone <a href="https://github.com/juanlu-sanz/air-gapped-acs-workshop.git" class="bare">https://github.com/juanlu-sanz/air-gapped-acs-workshop.git</a>
 cd air-gapped-acs-workshop</code></pre>
 </div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+On a fresh ACS install, the Scanner V4 vulnerability database takes 15-30 minutes to fully hydrate. During this period ACS discovers deployments and images but reports zero vulnerabilities. Wait until <code>oc logs -l app=scanner-v4-matcher -n stackrox --context hub --tail=3</code> shows <code>"completed multi-bundle update"</code> before expecting scan results. If you are preparing the environment for a workshop, run the setup at least 30 minutes before participants arrive.
+</td>
+</tr>
+</table>
 </div>
 <hr>
 </div>
