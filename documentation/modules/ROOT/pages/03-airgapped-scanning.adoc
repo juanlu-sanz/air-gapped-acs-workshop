@@ -30,7 +30,9 @@ In a real air-gapped environment, the vulnerability database also needs manual u
 
 *What:* Apply a NetworkPolicy that blocks traffic from outside the secured cluster to the internal OpenShift registry.
 
-*Why:* This simulates the air-gap condition where Central (on the hub cluster) cannot directly pull images from the secured cluster's registry. In production, this isolation happens at the network level (firewall rules, separate VLANs). Here we use a NetworkPolicy for a reproducible demo.
+*Why:* This simulates the air-gap condition where Central (on the hub cluster) cannot directly pull images from the secured cluster's registry. In production, this isolation happens at the network level (firewall rules, separate VLANs, or physically disconnected networks). Here we use a NetworkPolicy as a demonstration tool.
+
+NOTE: The NetworkPolicy blocks pod-level traffic to the registry within the secured cluster. However, the registry's external *route* traverses the OpenShift ingress controller (which runs as a pod inside the cluster and is whitelisted by the policy). To fully block route-based access from Central, you would also need egress policies on the hub cluster or firewall rules between the VPCs. In a real air-gapped deployment, the clusters are on separate networks so this is inherent.
 
 First, confirm the internal registry is accessible on the secured cluster:
 
@@ -288,8 +290,8 @@ Transfer the file to a machine that can reach Central (via USB, S3 bucket, basti
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" scanner upload-db \
-  --scanner-db-file scanner-vuln-updates.zip
+roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" --insecure-skip-tls-verify \
+  scanner upload-db --scanner-db-file scanner-vuln-updates.zip
 ----
 
 .Verify: Vulnerability database is updated
@@ -308,7 +310,8 @@ The Scanner picks up new definitions within 5 minutes. You can also trigger a re
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" image scan \
+roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" --insecure-skip-tls-verify \
+  image scan \
   --image "image-registry.openshift-image-registry.svc:5000/scan-test/test-app:latest" \
   --cluster secured --output json | jq '.result.summary'
 ----

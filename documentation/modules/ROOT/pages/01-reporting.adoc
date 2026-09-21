@@ -47,6 +47,52 @@ Click "Create report" and fill in:
 
 Click Save. The report configuration is now available.
 
+You can also create the report entirely through the API. The v2 report API requires a `resourceScope` backed by a _collection_. First, create a collection that scopes to the secured cluster, then create the report config that references it:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+# Get the secured cluster ID
+SECURED_CLUSTER_ID=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/clusters" | \
+  jq -r '.clusters[] | select(.name=="secured") | .id')
+
+# Create a collection scoped to the secured cluster
+COLLECTION_ID=$(curl -sk -X POST -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/collections" \
+  -d "{
+    \"name\": \"secured-cluster-scope\",
+    \"description\": \"All deployments in the secured cluster\",
+    \"resourceSelectors\": [{
+      \"rules\": [{
+        \"fieldName\": \"Cluster\",
+        \"operator\": \"OR\",
+        \"values\": [{\"value\": \"secured\", \"matchType\": \"EXACT\"}]
+      }]
+    }]
+  }" | jq -r '.collection.id')
+
+# Create the report configuration with the collection as resource scope
+curl -sk -X POST -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/reports/configurations" \
+  -d "{
+    \"name\": \"secured-cluster-vulns\",
+    \"description\": \"Vulnerability report for the secured cluster\",
+    \"vulnReportFilters\": {
+      \"severities\": [\"CRITICAL_VULNERABILITY_SEVERITY\", \"IMPORTANT_VULNERABILITY_SEVERITY\"],
+      \"fixability\": \"FIXABLE\",
+      \"imageTypes\": [\"DEPLOYED\"]
+    },
+    \"resourceScope\": {
+      \"collectionScope\": {\"collectionId\": \"${COLLECTION_ID}\"}
+    }
+  }"
+----
+
+NOTE: The collections API is at `/v1/collections` (not `/v2`). The collection ID is required by the v2 report configuration endpoint to define the resource scope. Without it the API returns a _"must specify a valid resource scope"_ error.
+
 .Verify: Report configuration exists
 [%collapsible]
 ====

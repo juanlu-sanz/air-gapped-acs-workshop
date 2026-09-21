@@ -2,6 +2,13 @@
 t/
 myenv.sh
 
+# ACS artifacts (generated per-environment, contain secrets)
+secured-cluster-init-bundle.yaml
+scanner-vuln-updates.zip
+
+# CLI binaries (downloaded per-workstation)
+roxctl
+
 # Terraform (setup/ directory)
 setup/.terraform/
 setup/.terraform.lock.hcl

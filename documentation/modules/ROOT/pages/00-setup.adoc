@@ -347,14 +347,17 @@ oc wait --for=condition=CatalogSourcesUnhealthy=False subscription/rhacs-operato
 
 *What:* Generate a cluster init bundle from Central and apply it to the secured cluster.
 
-*Why:* The init bundle contains TLS certificates that let the secured cluster authenticate with Central.
+IMPORTANT: The init bundle contains TLS certificates tied to this specific Central instance. If you tear down and recreate Central, you must generate a new init bundle. The file is gitignored to prevent stale bundles from being committed.
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" central init-bundles generate secured-cluster \
+roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" --insecure-skip-tls-verify \
+  central init-bundles generate secured-cluster \
   --output-secrets secured-cluster-init-bundle.yaml
 ----
+
+NOTE: The `--insecure-skip-tls-verify` flag is needed because Central uses a self-signed TLS certificate. In production, configure `roxctl` to trust the Central CA instead.
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
@@ -371,10 +374,13 @@ oc apply -f secured-cluster-init-bundle.yaml -n stackrox --context secured
 
 *Why:* This deploys Sensor, Collector (eBPF), Admission Controller, and Scanner-slim. Scanner-slim is needed later for delegated scanning.
 
+The SecuredCluster manifest contains `${ACS_CENTRAL_ENDPOINT}` which must be replaced with the Central route before applying. Use `envsubst`:
+
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-oc apply -f 00-setup/secured-cluster.yaml --context secured
+export ACS_CENTRAL_ENDPOINT="${ACS_CENTRAL_ROUTE}"
+envsubst < 00-setup/secured-cluster.yaml | oc apply --context secured -f -
 ----
 
 [.console-input]
@@ -411,7 +417,7 @@ scanner-v4-db-xxxxxxx-xxxxx           1/1     Running   0          1m
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" cluster list
+roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" --insecure-skip-tls-verify cluster list
 ----
 
 You should see both the hub and the secured cluster listed as healthy.
@@ -479,6 +485,8 @@ rhcos4-stig             2m
 git clone https://github.com/juanlu-sanz/air-gapped-acs-workshop.git
 cd air-gapped-acs-workshop
 ----
+
+IMPORTANT: On a fresh ACS install, the Scanner V4 vulnerability database takes 15-30 minutes to fully hydrate. During this period ACS discovers deployments and images but reports zero vulnerabilities. Wait until `oc logs -l app=scanner-v4-matcher -n stackrox --context hub --tail=3` shows `"completed multi-bundle update"` before expecting scan results. If you are preparing the environment for a workshop, run the setup at least 30 minutes before participants arrive.
 
 '''
 
