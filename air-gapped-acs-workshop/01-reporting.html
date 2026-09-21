@@ -201,8 +201,7 @@ The secured cluster should have at least a few running workloads so the reports 
 </div>
 <div class="listingblock console-input">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc create namespace demo-workloads --context secured
-oc create deployment nginx --image=registry.access.redhat.com/ubi9/nginx-122 -n demo-workloads --context secured</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 01-reporting/demo-workloads.yaml --context secured</code></pre>
 </div>
 </div>
 </div>
