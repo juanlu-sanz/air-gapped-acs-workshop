@@ -14,8 +14,7 @@ NOTE: The secured cluster should have at least a few running workloads so the re
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-oc create namespace demo-workloads --context secured
-oc create deployment nginx --image=registry.access.redhat.com/ubi9/nginx-122 -n demo-workloads --context secured
+oc apply -f 01-reporting/demo-workloads.yaml --context secured
 ----
 
 == How it works
