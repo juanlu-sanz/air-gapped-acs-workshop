@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>RHACS: Reporting, Compliance, and Air-Gapped Scanning :: RHACS: Reporting, Compliance, and Air-Gapped Scanning</title>
+    <link rel="canonical" href="https://juanlu-sanz.github.io/air-gapped-acs-workshop/pr/session3-risk-mitigation/air-gapped-acs-workshop/01-reporting.html">
+    <link rel="prev" href="00-setup.html">
+    <link rel="next" href="02-compliance.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://juanlu-sanz.github.io/air-gapped-acs-workshop/pr/session3-risk-mitigation">RHACS: Reporting, Compliance, and Air-Gapped Scanning</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="air-gapped-acs-workshop" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Cluster Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#export-variables">Export Workshop Variables</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#login-clusters">Log In to Clusters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#rename-contexts">Rename Contexts</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#install-acs">Install ACS Central</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#register-secured-cluster">Register Secured Cluster</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="00-setup.html#install-compliance-operator">Install Compliance Operator</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="01-reporting.html">Step 1: Reporting</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#vulnerability-report">Create a Vulnerability Report</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#schedule-report">Schedule Recurring Reports</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#interpret-report">Interpret Report for a Risk Team</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#api-export">Export Data via API</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="02-compliance.html">Step 2: Compliance</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-compliance.html#compliance-overview">Compliance in ACS</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-compliance.html#profiles">CIS and STIG Profiles</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-compliance.html#schedule-scan">Schedule a Compliance Scan</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-compliance.html#tailored-profile">Create a Tailored Profile</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-compliance.html#coverage-dashboard">Coverage Dashboard</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="03-airgapped-scanning.html">Step 3: Air-Gapped Scanning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-airgapped-scanning.html#simulate-airgap">Simulate an Air-Gapped Registry</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-airgapped-scanning.html#enable-delegated-scanning">Enable Delegated Scanning</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-airgapped-scanning.html#push-test-image">Push a Test Image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-airgapped-scanning.html#verify-scan">Verify Scan Results</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-airgapped-scanning.html#offline-vuln-db">Update Vulnerability Database Offline</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="04-risk-mitigation.html">Step 4: Risk Mitigation</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-risk-mitigation.html#deploy-vulnerable">Deploy Vulnerable Workloads</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-risk-mitigation.html#risk-view">Risk View and Priority Scoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-risk-mitigation.html#vex-data">Evaluate CVEs Against VEX Data</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-risk-mitigation.html#defer-false-positive">Defer and False Positive Workflows</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-risk-mitigation.html#policy-enforcement">Deploy-Time Policy Enforcement</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-risk-mitigation.html#exceptions-at-scale">Risk Acceptance at Scale</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">RHACS: Reporting, Compliance, and Air-Gapped Scanning</a></li>
+    <li><a href="01-reporting.html">Step 1: Reporting</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/juanlu-sanz/air-gapped-acs-workshop/edit/session3-risk-mitigation/documentation/modules/ROOT/pages/01-reporting.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">RHACS: Reporting, Compliance, and Air-Gapped Scanning</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>ACS collects vulnerability and compliance data from every secured cluster. This step shows how to turn that data into scheduled reports, read them with a risk or security team, and pull the same data through the API for external dashboards.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>ACS Central running on the hub cluster from <a href="00-setup.html" class="xref page">Cluster Setup</a></p>
+</li>
+<li>
+<p>At least one secured cluster registered and healthy</p>
+</li>
+<li>
+<p><code>ROX_API_TOKEN</code> and <code>ACS_CENTRAL_ROUTE</code> exported as described in <a href="00-setup.html#export-variables" class="xref page">Export Workshop Variables</a></p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The secured cluster should have at least a few running workloads so the reports contain data. If nothing is deployed yet, create a quick test namespace with a sample deployment:
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 01-reporting/demo-workloads.yaml --context secured</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how_it_works"><a class="anchor" href="#_how_it_works"></a>How it works</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>ACS generates two kinds of reports:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Vulnerability reports summarize CVEs across images, deployments, or namespaces. You can filter by severity, fixability, and scope (specific clusters, namespaces, or all).</p>
+</li>
+<li>
+<p>Compliance reports show the pass/fail status of checks from the Compliance Operator profiles configured in <a href="02-compliance.html" class="xref page">Step 2</a>.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Both can be downloaded as CSV, emailed on a schedule, or retrieved through the REST API.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_steps_to_apply"><a class="anchor" href="#_steps_to_apply"></a>Steps to apply</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="vulnerability-report"><a class="anchor" href="#vulnerability-report"></a>1. Create a vulnerability report</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Create a vulnerability report configuration in the ACS UI that covers the secured cluster.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> A reusable report configuration lets you generate consistent snapshots of your vulnerability posture at any time.</p>
+</div>
+<div class="paragraph">
+<p>Open the ACS console at <code><a href="https://${ACS_CENTRAL_ROUTE}" class="bare">https://${ACS_CENTRAL_ROUTE}</a></code> and navigate to Vulnerability Management &gt; Reporting.</p>
+</div>
+<div class="paragraph">
+<p>Click "Create report" and fill in:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Name: <code>secured-cluster-vulns</code></p>
+</li>
+<li>
+<p>Description: <code>Vulnerability report for the secured cluster</code></p>
+</li>
+<li>
+<p>CVE severity: Critical, Important</p>
+</li>
+<li>
+<p>CVE status: Fixable</p>
+</li>
+<li>
+<p>Scope: Select the <code>secured</code> cluster</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Click Save. The report configuration is now available.</p>
+</div>
+<div class="paragraph">
+<p>You can also create the report entirely through the API. The v2 report API requires a <code>resourceScope</code> backed by a <em>collection</em>. First, create a collection that scopes to the secured cluster, then create the report config that references it:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Get the secured cluster ID
+SECURED_CLUSTER_ID=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/clusters" | \
+  jq -r '.clusters[] | select(.name=="secured") | .id')
+
+# Create a collection scoped to the secured cluster
+COLLECTION_ID=$(curl -sk -X POST -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/collections" \
+  -d "{
+    \"name\": \"secured-cluster-scope\",
+    \"description\": \"All deployments in the secured cluster\",
+    \"resourceSelectors\": [{
+      \"rules\": [{
+        \"fieldName\": \"Cluster\",
+        \"operator\": \"OR\",
+        \"values\": [{\"value\": \"secured\", \"matchType\": \"EXACT\"}]
+      }]
+    }]
+  }" | jq -r '.collection.id')
+
+# Create the report configuration with the collection as resource scope
+curl -sk -X POST -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/reports/configurations" \
+  -d "{
+    \"name\": \"secured-cluster-vulns\",
+    \"description\": \"Vulnerability report for the secured cluster\",
+    \"vulnReportFilters\": {
+      \"severities\": [\"CRITICAL_VULNERABILITY_SEVERITY\", \"IMPORTANT_VULNERABILITY_SEVERITY\"],
+      \"fixability\": \"FIXABLE\",
+      \"imageTypes\": [\"DEPLOYED\"],
+      \"sinceLastSentScheduledReport\": true
+    },
+    \"resourceScope\": {
+      \"collectionScope\": {\"collectionId\": \"${COLLECTION_ID}\"}
+    }
+  }"</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The collections API is at <code>/v1/collections</code> (not <code>/v2</code>). The collection ID is required by the v2 report configuration endpoint to define the resource scope. Without it the API returns a <em>"must specify a valid resource scope"</em> error.
+</td>
+</tr>
+</table>
+</div>
+<details>
+<summary class="title">Verify: Report configuration exists</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/reports/configurations" | jq '.reportConfigs[].name'</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">"secured-cluster-vulns"</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="_2_generate_and_download_a_report"><a class="anchor" href="#_2_generate_and_download_a_report"></a>2. Generate and download a report</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Run the report on demand and download it as CSV.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> On-demand generation lets you get a current snapshot before a meeting or audit without waiting for the schedule.</p>
+</div>
+<div class="paragraph">
+<p>In the ACS UI, go to Vulnerability Management &gt; Reporting, click the <code>secured-cluster-vulns</code> report, and click "Generate report". Once the report completes, click "Download" to get the CSV file.</p>
+</div>
+<div class="paragraph">
+<p>You can also trigger the report from the API:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Get the report config ID
+REPORT_CONFIG_ID=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/reports/configurations" | \
+  jq -r '.reportConfigs[] | select(.name=="secured-cluster-vulns") | .id')
+
+# Trigger the report
+curl -sk -X POST -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/reports/run" \
+  -d "{\"reportConfigId\": \"${REPORT_CONFIG_ID}\"}"</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Report was generated</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/reports/jobs?reportConfigId=${REPORT_CONFIG_ID}" | \
+  jq '.reportJobs[0].status'</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">"COMPLETED"</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="schedule-report"><a class="anchor" href="#schedule-report"></a>3. Schedule recurring reports</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Configure the report to run weekly and deliver results by email.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Scheduled reports give the risk team a predictable cadence of vulnerability data without manual intervention.</p>
+</div>
+<div class="paragraph">
+<p>Edit the <code>secured-cluster-vulns</code> report configuration in the ACS UI. Under "Delivery schedule":</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Frequency: Weekly</p>
+</li>
+<li>
+<p>Day: Monday</p>
+</li>
+<li>
+<p>Time: 08:00 UTC</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Under "Delivery destinations", add an email notifier (requires an email integration configured under Platform Configuration &gt; Integrations &gt; Email).</p>
+</div>
+<div class="paragraph">
+<p>You can also set the schedule via API:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -sk -X PATCH -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/reports/configurations/${REPORT_CONFIG_ID}" \
+  -d '{
+    "schedule": {
+      "intervalType": "WEEKLY",
+      "hour": 8,
+      "minute": 0,
+      "daysOfWeek": { "days": [1] }
+    }
+  }'</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Schedule is set</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/reports/configurations/${REPORT_CONFIG_ID}" | \
+  jq '.schedule'</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">{
+  "intervalType": "WEEKLY",
+  "hour": 8,
+  "minute": 0,
+  "daysOfWeek": {
+    "days": [1]
+  }
+}</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="interpret-report"><a class="anchor" href="#interpret-report"></a>4. Interpret the report for a risk team</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Walk through the CSV columns and explain what the risk team needs to focus on.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> A raw CSV full of CVEs is hard to act on. Explaining which columns map to what decisions helps the risk team prioritize.</p>
+</div>
+<div class="paragraph">
+<p>The vulnerability report CSV contains these columns:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Column</th>
+<th class="tableblock halign-left valign-top">What it tells you</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CVE</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The CVE identifier (e.g., CVE-2024-1234)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CVSS Score</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Severity rating from 0 to 10</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Severity</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Critical, Important, Moderate, or Low</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Component</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The vulnerable software component (library, package)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Component Version</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Currently installed version</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fixed In Version</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The version that fixes the CVE (empty if no fix exists)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Image</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The container image containing the component</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Deployment</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Which deployment uses the image</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Namespace</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The namespace where the deployment runs</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cluster</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Which cluster the deployment is on</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>When presenting to a risk team:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Filter the CSV by "Critical" severity and non-empty "Fixed In Version". These are the items where a fix exists and the risk is highest.</p>
+</li>
+<li>
+<p>Group by namespace to identify which teams own the affected workloads.</p>
+</li>
+<li>
+<p>Track the "Fixed In Version" column across reports to measure remediation progress week over week.</p>
+</li>
+</ul>
+</div>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="api-export"><a class="anchor" href="#api-export"></a>5. Export data via API for external dashboards</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Query the ACS API for vulnerability data and feed it into an external tool (e.g., Grafana, a BI dashboard, or a custom script).</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Some organizations need a single pane of glass that combines ACS data with metrics from other sources.</p>
+</div>
+<div class="paragraph">
+<p>ACS exposes vulnerability data through the <code>/v1/</code> and <code>/v2/</code> REST APIs. Here are common queries:</p>
+</div>
+<div class="paragraph">
+<p>Fetch all critical CVEs with available fixes:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/images/vulnerabilities?query=Severity:CRITICAL_VULNERABILITY_SEVERITY%2BFixable:true" | \
+  jq '.imageVulnerabilities | length'</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Fetch deployment-level vulnerability counts:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/deploymentscount?query=Severity:CRITICAL_VULNERABILITY_SEVERITY" | jq .</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>ACS also exports Prometheus metrics. If you have Prometheus and Grafana running, you can scrape the <code>/metrics</code> endpoint from Central and build dashboards for:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Total CVEs by severity over time</p>
+</li>
+<li>
+<p>Fix rate (how quickly CVEs get patched after a fix becomes available)</p>
+</li>
+<li>
+<p>Compliance pass rate per cluster</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+The ACS Prometheus metrics endpoint is at <code><a href="https://${ACS_CENTRAL_ROUTE}/metrics" class="bare">https://${ACS_CENTRAL_ROUTE}/metrics</a></code>. Configure your Prometheus instance to scrape it using a bearer token for authentication.
+</td>
+</tr>
+</table>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_solves"><a class="anchor" href="#_what_this_solves"></a>What this solves</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Problem</th>
+<th class="tableblock halign-left valign-top">How this step solves it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No visibility into vulnerability posture</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scheduled reports deliver a current snapshot weekly</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Risk team cannot read raw scan data</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CSV format with clear columns that map to action items</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Data is siloed in the ACS UI</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">API access and Prometheus metrics feed external dashboards</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_does_not_solve_yet"><a class="anchor" href="#_what_this_does_not_solve_yet"></a>What this does NOT solve (yet)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Remaining problem</th>
+<th class="tableblock halign-left valign-top">Addressed in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No compliance benchmarks are configured</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="02-compliance.html" class="xref page">Step 2: Compliance</a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Central cannot scan images in air-gapped registries</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="03-airgapped-scanning.html" class="xref page">Step 3: Air-gapped scanning</a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_official_documentation"><a class="anchor" href="#_official_documentation"></a>Official documentation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/operating/managing-vulnerabilities">Managing vulnerabilities in RHACS 4.11</a></p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/operating/managing-compliance">Managing compliance in RHACS 4.11</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_alternatives_considered"><a class="anchor" href="#_alternatives_considered"></a>Alternatives considered</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Approach</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ACS built-in reports (this workshop)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Covers most use cases out of the box. CSV export and email scheduling require no extra infrastructure.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Custom scripts using the ACS API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">More flexible filtering and formatting, but requires maintaining scripts. Use when the built-in reports do not cover your exact needs.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Grafana dashboards via Prometheus metrics</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Good for real-time monitoring and combining ACS data with other cluster metrics. Requires a Prometheus + Grafana stack.</p></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reset"><a class="anchor" href="#_reset"></a>Reset</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Remove the demo workloads and the report configuration.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Delete the demo workloads namespace
+oc delete namespace demo-workloads --context secured --ignore-not-found --wait
+
+# Delete the report configuration via API
+REPORT_CONFIG_ID=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/reports/configurations" | \
+  jq -r '.reportConfigs[] | select(.name=="secured-cluster-vulns") | .id')
+
+curl -sk -X DELETE -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/reports/configurations/${REPORT_CONFIG_ID}"</code></pre>
+</div>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="00-setup.html">Cluster Setup</a></span>
+  <span class="next"><a href="02-compliance.html">Step 2: Compliance</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

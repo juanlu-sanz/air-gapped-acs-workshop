@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>RHACS: Reporting, Compliance, and Air-Gapped Scanning :: RHACS: Reporting, Compliance, and Air-Gapped Scanning</title>
+    <link rel="canonical" href="https://juanlu-sanz.github.io/air-gapped-acs-workshop/pr/session3-risk-mitigation/air-gapped-acs-workshop/00-setup.html">
+    <link rel="prev" href="index.html">
+    <link rel="next" href="01-reporting.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://juanlu-sanz.github.io/air-gapped-acs-workshop/pr/session3-risk-mitigation">RHACS: Reporting, Compliance, and Air-Gapped Scanning</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="air-gapped-acs-workshop" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Cluster Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#export-variables">Export Workshop Variables</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#login-clusters">Log In to Clusters</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#rename-contexts">Rename Contexts</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#install-acs">Install ACS Central</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#register-secured-cluster">Register Secured Cluster</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="#install-compliance-operator">Install Compliance Operator</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="01-reporting.html">Step 1: Reporting</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-reporting.html#vulnerability-report">Create a Vulnerability Report</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-reporting.html#schedule-report">Schedule Recurring Reports</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-reporting.html#interpret-report">Interpret Report for a Risk Team</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="01-reporting.html#api-export">Export Data via API</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="02-compliance.html">Step 2: Compliance</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-compliance.html#compliance-overview">Compliance in ACS</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-compliance.html#profiles">CIS and STIG Profiles</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-compliance.html#schedule-scan">Schedule a Compliance Scan</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-compliance.html#tailored-profile">Create a Tailored Profile</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="02-compliance.html#coverage-dashboard">Coverage Dashboard</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="03-airgapped-scanning.html">Step 3: Air-Gapped Scanning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-airgapped-scanning.html#simulate-airgap">Simulate an Air-Gapped Registry</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-airgapped-scanning.html#enable-delegated-scanning">Enable Delegated Scanning</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-airgapped-scanning.html#push-test-image">Push a Test Image</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-airgapped-scanning.html#verify-scan">Verify Scan Results</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="03-airgapped-scanning.html#offline-vuln-db">Update Vulnerability Database Offline</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="04-risk-mitigation.html">Step 4: Risk Mitigation</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-risk-mitigation.html#deploy-vulnerable">Deploy Vulnerable Workloads</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-risk-mitigation.html#risk-view">Risk View and Priority Scoring</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-risk-mitigation.html#vex-data">Evaluate CVEs Against VEX Data</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-risk-mitigation.html#defer-false-positive">Defer and False Positive Workflows</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-risk-mitigation.html#policy-enforcement">Deploy-Time Policy Enforcement</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="04-risk-mitigation.html#exceptions-at-scale">Risk Acceptance at Scale</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">RHACS: Reporting, Compliance, and Air-Gapped Scanning</a></li>
+    <li><a href="00-setup.html">Cluster Setup</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/juanlu-sanz/air-gapped-acs-workshop/edit/session3-risk-mitigation/documentation/modules/ROOT/pages/00-setup.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">RHACS: Reporting, Compliance, and Air-Gapped Scanning</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This page walks you through the environment preparation: logging into two OpenShift clusters on AWS, installing ACS Central on the hub, registering the secured cluster, and installing the Compliance Operator. Every later step assumes these are done.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Two OpenShift 4.15+ clusters running on AWS (ROSA HCP or OCP IPI)</p>
+</li>
+<li>
+<p><code>oc</code> CLI (4.15+) installed</p>
+</li>
+<li>
+<p><code>roxctl</code> CLI (4.11+) installed</p>
+</li>
+<li>
+<p><code>jq</code> and <code>curl</code> available</p>
+</li>
+<li>
+<p>Cluster-admin access to both clusters</p>
+</li>
+<li>
+<p>A workstation with internet access (for downloading CLI tools and vulnerability definitions)</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="cluster-mapping"><a class="anchor" href="#cluster-mapping"></a>Cluster mapping</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Role</th>
+<th class="tableblock halign-left valign-top">Context name</th>
+<th class="tableblock halign-left valign-top">Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Hub cluster</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>hub</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Runs ACS Central, Scanner V4, and Sensor</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Secured cluster</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>secured</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Simulated air-gapped cluster with internal registry, Scanner-slim, and Sensor</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_option_a_pre_provisioned_clusters_demo_platform"><a class="anchor" href="#_option_a_pre_provisioned_clusters_demo_platform"></a>Option A: Pre-provisioned clusters (Demo Platform)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If someone else provisioned the clusters for you, skip to <a href="#option-b">Option B: Quick login (clusters already configured)</a>.</p>
+</div>
+<div class="sect2">
+<h3 id="_1_gather_cluster_credentials"><a class="anchor" href="#_1_gather_cluster_credentials"></a>1. Gather cluster credentials</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Collect the API URLs and kubeadmin passwords for both clusters from the provisioning output or email.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> You need these to log in and rename contexts.</p>
+</div>
+<div class="paragraph">
+<p>Locate the API server URLs and credentials for both clusters. They will look something like:</p>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">Hub API:     https://api.hub-cluster.example.com:6443
+Secured API: https://api.secured-cluster.example.com:6443</code></pre>
+</div>
+</div>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="login-clusters"><a class="anchor" href="#login-clusters"></a>2. Log in to both clusters and rename contexts</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Fill in <code>myenv.sh</code> with your cluster credentials and source it.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> <code>myenv.sh</code> logs into both clusters and renames the contexts to <code>hub</code> and <code>secured</code> in one shot. Every <code>oc</code> command in the workshop uses these context names.</p>
+</div>
+<div class="paragraph">
+<p>See <a href="#export-variables">Export workshop variables</a> below for the full <code>myenv.sh</code> structure. After editing it with your API URLs and passwords, run:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">source myenv.sh</code></pre>
+</div>
+</div>
+<details id="rename-contexts">
+<summary class="title">Verify: Both contexts exist and are authenticated</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc whoami --context hub
+oc whoami --context secured</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kube:admin
+kube:admin</code></pre>
+</div>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc config get-contexts -o name</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">hub
+secured</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="option-b"><a class="anchor" href="#option-b"></a>Option B: Quick login (clusters already configured)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If someone else already ran <code>source myenv.sh</code> or set up the contexts for you, verify they work:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc whoami --context hub
+oc whoami --context secured</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Both should return <code>kube:admin</code> or your user. If they do, skip ahead to <a href="#export-variables">Export workshop variables</a>.</p>
+</div>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="export-variables"><a class="anchor" href="#export-variables"></a>Export workshop variables</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The workshop uses several environment variables across all steps. Instead of exporting them one at a time, keep them in a personal <code>myenv.sh</code> file at the repo root. This file is gitignored because it contains passwords.</p>
+</div>
+<div class="paragraph">
+<p>Copy the template and fill in your cluster details:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">cp myenv.sh myenv.sh.bak  # optional, keep the template
+vi myenv.sh               # fill in your API URLs and passwords</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The file follows this structure:</p>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Console URLs (for quick reference - not used by scripts)
+# Hub console:       https://console-openshift-console.apps.&lt;hub-domain&gt;
+# Secured console:   https://console-openshift-console.apps.&lt;secured-domain&gt;
+
+# -- Workshop variables (used by envsubst in YAML manifests) ---------------
+export HUB_API_URL="https://api.&lt;hub-domain&gt;:6443"
+export SECURED_API_URL="https://api.&lt;secured-domain&gt;:6443"
+
+export HUB_PASSWORD="&lt;kubeadmin-password-hub&gt;"
+export SECURED_PASSWORD="&lt;kubeadmin-password-secured&gt;"
+
+export ACS_CENTRAL_ROUTE=""   # Set after Central is deployed (step 6)
+export ROX_API_TOKEN=""       # Set after generating the token in the ACS UI (step 6)
+
+# -- Context cleanup (idempotent) ------------------------------------------
+oc config delete-context hub 2&gt;/dev/null
+oc config delete-context secured 2&gt;/dev/null
+
+# -- Login + rename contexts -----------------------------------------------
+oc login "$HUB_API_URL" --username kubeadmin --password "$HUB_PASSWORD"
+oc config rename-context "$(oc config current-context)" hub
+
+oc login "$SECURED_API_URL" --username kubeadmin --password "$SECURED_PASSWORD"
+oc config rename-context "$(oc config current-context)" secured</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Source it to log in and set up contexts in one shot:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">source myenv.sh</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can re-run <code>source myenv.sh</code> at any time. The context cleanup at the top makes it idempotent.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Variable</th>
+<th class="tableblock halign-left valign-top">Used in</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>HUB_API_URL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>00-setup</code>, <code>myenv.sh</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">API server URL of the hub cluster</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SECURED_API_URL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>00-setup</code>, <code>myenv.sh</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">API server URL of the secured cluster</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>HUB_PASSWORD</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>myenv.sh</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">kubeadmin password for the hub cluster</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SECURED_PASSWORD</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>myenv.sh</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">kubeadmin password for the secured cluster</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ACS_CENTRAL_ROUTE</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>01-reporting</code>, <code>02-compliance</code>, <code>03-airgapped-scanning</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">External hostname of ACS Central (set after step 6)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ROX_API_TOKEN</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>01-reporting</code>, <code>03-airgapped-scanning</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">API token for <code>roxctl</code> and API calls (set after step 6)</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+Never commit <code>myenv.sh</code> with real credentials. The <code>.gitignore</code> already excludes it.
+</td>
+</tr>
+</table>
+</div>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="install-acs"><a class="anchor" href="#install-acs"></a>Install ACS Central on the hub cluster</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_4_install_the_rhacs_operator"><a class="anchor" href="#_4_install_the_rhacs_operator"></a>4. Install the RHACS Operator</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Install the RHACS Operator from OperatorHub on the hub cluster.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The Operator manages the Central and SecuredCluster custom resources.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 00-setup/acs-operator-subscription.yaml --context hub</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Wait for the Operator to be ready:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc wait --for=condition=CatalogSourcesUnhealthy=False subscription/rhacs-operator \
+  -n rhacs-operator --context hub --timeout=300s</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Operator pod is running</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get csv -n rhacs-operator --context hub</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                       DISPLAY                                      PHASE
+rhacs-operator.v4.11.x     RHACS Operator                               Succeeded</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="_5_create_the_central_instance"><a class="anchor" href="#_5_create_the_central_instance"></a>5. Create the Central instance</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Deploy the ACS Central custom resource in the <code>stackrox</code> namespace.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Central is the management plane: the UI, API, scanner, and database.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 00-setup/stackrox-namespace.yaml --context hub
+oc apply -f 00-setup/central.yaml --context hub</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Wait for Central to be ready (this may take a few minutes):</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc wait --for=condition=Deployed central/stackrox-central-services \
+  -n stackrox --context hub --timeout=600s</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Central pods are running</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get pods -n stackrox --context hub</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                          READY   STATUS    RESTARTS   AGE
+central-xxxxxxxxxx-xxxxx      1/1     Running   0          2m
+central-db-xxxxxxxxxx-xxxxx   1/1     Running   0          2m
+scanner-v4-xxxxxxxxx-xxxxx    1/1     Running   0          2m
+scanner-v4-db-xxxxxxx-xxxxx   1/1     Running   0          2m</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="_6_retrieve_the_admin_password_and_central_route"><a class="anchor" href="#_6_retrieve_the_admin_password_and_central_route"></a>6. Retrieve the admin password and Central route</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Get the initial admin password and the route to access the ACS console.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> You need these to log in and generate an API token.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get secret central-htpasswd -n stackrox --context hub \
+  -o jsonpath='{.data.password}' | base64 -d; echo</code></pre>
+</div>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export ACS_CENTRAL_ROUTE=$(oc get route central -n stackrox --context hub -o jsonpath='{.spec.host}')
+echo "ACS Console: <a href="https://${ACS_CENTRAL_ROUTE}"" class="bare">https://${ACS_CENTRAL_ROUTE}"</a></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Log in at that URL with username <code>admin</code> and the password from above. Then generate an API token under Platform Configuration &gt; Integrations &gt; Authentication Tokens &gt; API Token, and export it:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export ROX_API_TOKEN="&lt;paste-token-here&gt;"</code></pre>
+</div>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="register-secured-cluster"><a class="anchor" href="#register-secured-cluster"></a>Register the secured cluster</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_7_install_the_rhacs_operator_on_the_secured_cluster"><a class="anchor" href="#_7_install_the_rhacs_operator_on_the_secured_cluster"></a>7. Install the RHACS Operator on the secured cluster</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Install the same RHACS Operator on the secured cluster.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The Operator on the secured side manages the SecuredCluster CR (Sensor, Collector, Scanner-slim).</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 00-setup/acs-operator-subscription.yaml --context secured</code></pre>
+</div>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc wait --for=condition=CatalogSourcesUnhealthy=False subscription/rhacs-operator \
+  -n rhacs-operator --context secured --timeout=300s</code></pre>
+</div>
+</div>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="_8_create_an_init_bundle_and_deploy_it"><a class="anchor" href="#_8_create_an_init_bundle_and_deploy_it"></a>8. Create an init bundle and deploy it</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Generate a cluster init bundle from Central and apply it to the secured cluster.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+The init bundle contains TLS certificates tied to this specific Central instance. If you tear down and recreate Central, you must generate a new init bundle. The file is gitignored to prevent stale bundles from being committed.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" --insecure-skip-tls-verify \
+  central init-bundles generate secured-cluster \
+  --output-secrets secured-cluster-init-bundle.yaml</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The <code>--insecure-skip-tls-verify</code> flag is needed because Central uses a self-signed TLS certificate. In production, configure <code>roxctl</code> to trust the Central CA instead.
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 00-setup/stackrox-namespace.yaml --context secured
+oc apply -f secured-cluster-init-bundle.yaml -n stackrox --context secured</code></pre>
+</div>
+</div>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="_9_deploy_the_securedcluster_cr"><a class="anchor" href="#_9_deploy_the_securedcluster_cr"></a>9. Deploy the SecuredCluster CR</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Create the SecuredCluster custom resource on the secured cluster, with Scanner-slim enabled.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> This deploys Sensor, Collector (eBPF), Admission Controller, and Scanner-slim. Scanner-slim is needed later for delegated scanning.</p>
+</div>
+<div class="paragraph">
+<p>The SecuredCluster manifest contains <code>${ACS_CENTRAL_ENDPOINT}</code> which must be replaced with the Central route before applying. Use <code>envsubst</code>:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export ACS_CENTRAL_ENDPOINT="${ACS_CENTRAL_ROUTE}"
+envsubst &lt; 00-setup/secured-cluster.yaml | oc apply --context secured -f -</code></pre>
+</div>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc wait --for=condition=Deployed securedcluster/stackrox-secured-cluster-services \
+  -n stackrox --context secured --timeout=600s</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Secured cluster pods are running</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get pods -n stackrox --context secured</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                                  READY   STATUS    RESTARTS   AGE
+sensor-xxxxxxxxxx-xxxxx               1/1     Running   0          1m
+admission-control-xxxxxxxxx-xxxxx     1/1     Running   0          1m
+collector-xxxxx                       2/2     Running   0          1m
+scanner-v4-xxxxxxxxx-xxxxx            1/1     Running   0          1m
+scanner-v4-db-xxxxxxx-xxxxx           1/1     Running   0          1m</code></pre>
+</div>
+</div>
+</div>
+</details>
+<details>
+<summary class="title">Verify: Cluster appears in ACS Central</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" --insecure-skip-tls-verify cluster list</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You should see both the hub and the secured cluster listed as healthy.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="install-compliance-operator"><a class="anchor" href="#install-compliance-operator"></a>Install the Compliance Operator</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_10_install_the_compliance_operator_on_both_clusters"><a class="anchor" href="#_10_install_the_compliance_operator_on_both_clusters"></a>10. Install the Compliance Operator on both clusters</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Subscribe to the Compliance Operator on both the hub and the secured cluster.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The Compliance Operator provides the CIS and STIG benchmark profiles that ACS uses for compliance scans.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc apply -f 00-setup/compliance-operator-subscription.yaml --context hub
+oc apply -f 00-setup/compliance-operator-subscription.yaml --context secured</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Wait for the operator to install on both clusters:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc wait --for=condition=CatalogSourcesUnhealthy=False subscription/compliance-operator \
+  -n openshift-compliance --context hub --timeout=300s
+oc wait --for=condition=CatalogSourcesUnhealthy=False subscription/compliance-operator \
+  -n openshift-compliance --context secured --timeout=300s</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Compliance profiles are available</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get profiles.compliance -n openshift-compliance --context hub</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                    AGE
+ocp4-cis                2m
+ocp4-cis-node           2m
+ocp4-stig               2m
+ocp4-stig-node          2m
+rhcos4-stig             2m
+...</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="clone-repo"><a class="anchor" href="#clone-repo"></a>Clone the workshop repository</h2>
+<div class="sectionbody">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">git clone <a href="https://github.com/juanlu-sanz/air-gapped-acs-workshop.git" class="bare">https://github.com/juanlu-sanz/air-gapped-acs-workshop.git</a>
+cd air-gapped-acs-workshop</code></pre>
+</div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+On a fresh ACS install, the Scanner V4 vulnerability database takes 15-30 minutes to fully hydrate. During this period ACS discovers deployments and images but reports zero vulnerabilities. Wait until <code>oc logs -l app=scanner-v4-matcher -n stackrox --context hub --tail=3</code> shows <code>"completed multi-bundle update"</code> before expecting scan results. If you are preparing the environment for a workshop, run the setup at least 30 minutes before participants arrive.
+</td>
+</tr>
+</table>
+</div>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reset"><a class="anchor" href="#_reset"></a>Reset</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To undo the full setup and start from scratch, remove ACS and the Compliance Operator from both clusters. Run the commands in reverse order.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Remove SecuredCluster from the secured cluster
+oc delete securedcluster stackrox-secured-cluster-services -n stackrox --context secured --ignore-not-found --wait
+
+# Remove init bundle secrets
+oc delete secret -l app.kubernetes.io/name=stackrox -n stackrox --context secured --ignore-not-found
+
+# Remove Central from the hub
+oc delete central stackrox-central-services -n stackrox --context hub --ignore-not-found --wait
+
+# Remove stackrox namespace from both clusters
+oc delete namespace stackrox --context secured --ignore-not-found --wait
+oc delete namespace stackrox --context hub --ignore-not-found --wait
+
+# Remove Compliance Operator subscription and namespace
+oc delete subscription compliance-operator -n openshift-compliance --context hub --ignore-not-found
+oc delete subscription compliance-operator -n openshift-compliance --context secured --ignore-not-found
+oc delete csv -l operators.coreos.com/compliance-operator.openshift-compliance -n openshift-compliance --context hub --ignore-not-found
+oc delete csv -l operators.coreos.com/compliance-operator.openshift-compliance -n openshift-compliance --context secured --ignore-not-found
+
+# Remove RHACS Operator subscription
+oc delete subscription rhacs-operator -n rhacs-operator --context hub --ignore-not-found
+oc delete subscription rhacs-operator -n rhacs-operator --context secured --ignore-not-found
+oc delete csv -l operators.coreos.com/rhacs-operator.rhacs-operator -n rhacs-operator --context hub --ignore-not-found
+oc delete csv -l operators.coreos.com/rhacs-operator.rhacs-operator -n rhacs-operator --context secured --ignore-not-found</code></pre>
+</div>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="index.html">Overview</a></span>
+  <span class="next"><a href="01-reporting.html">Step 1: Reporting</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
