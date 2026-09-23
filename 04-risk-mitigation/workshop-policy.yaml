@@ -1,0 +1,49 @@
+# workshop-policy.yaml
+# Purpose: ACS custom policy that flags deployments with critical fixable CVEs
+# Import this policy into ACS using the API or the UI (Platform Configuration > Policy Management > Import)
+{
+  "policies": [
+    {
+      "name": "Workshop - Critical Fixable CVEs",
+      "description": "Flags deployments that contain critical-severity CVEs with an available fix. Used in the risk mitigation workshop to demonstrate inform and enforce modes.",
+      "rationale": "Critical CVEs with available fixes represent the highest-priority remediation targets. Blocking these at deploy time prevents known-vulnerable images from reaching production.",
+      "remediation": "Update the image to a version that includes the fix. Check the Fixed In Version column in the ACS vulnerability view or the Red Hat CVE page for the patched version.",
+      "categories": [
+        "Vulnerability Management"
+      ],
+      "lifecycleStages": [
+        "DEPLOY"
+      ],
+      "severity": "CRITICAL_SEVERITY",
+      "enforcementActions": [],
+      "policySections": [
+        {
+          "sectionName": "Critical fixable CVEs",
+          "policyGroups": [
+            {
+              "fieldName": "Fixed By",
+              "booleanOperator": "OR",
+              "negate": false,
+              "values": [
+                {
+                  "value": ".*"
+                }
+              ]
+            },
+            {
+              "fieldName": "Severity",
+              "booleanOperator": "OR",
+              "negate": false,
+              "values": [
+                {
+                  "value": "CRITICAL"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "disabled": false
+    }
+  ]
+}

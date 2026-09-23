@@ -1,0 +1,110 @@
+# vulnerable-workloads.yaml
+# Purpose: Deploy workloads with known CVEs for risk mitigation exercises
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: risk-workshop
+  labels:
+    app.kubernetes.io/part-of: acs-workshop
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legacy-app
+  namespace: risk-workshop
+  labels:
+    app: legacy-app
+    app.kubernetes.io/part-of: acs-workshop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: legacy-app
+  template:
+    metadata:
+      labels:
+        app: legacy-app
+    spec:
+      containers:
+        - name: legacy-app
+          image: registry.access.redhat.com/ubi8/ubi:8.6
+          command: ["sleep", "infinity"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-frontend
+  namespace: risk-workshop
+  labels:
+    app: web-frontend
+    app.kubernetes.io/part-of: acs-workshop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-frontend
+  template:
+    metadata:
+      labels:
+        app: web-frontend
+    spec:
+      containers:
+        - name: web-frontend
+          image: registry.access.redhat.com/ubi8/nginx-120:1-86
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: batch-processor
+  namespace: risk-workshop
+  labels:
+    app: batch-processor
+    app.kubernetes.io/part-of: acs-workshop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: batch-processor
+  template:
+    metadata:
+      labels:
+        app: batch-processor
+    spec:
+      containers:
+        - name: batch-processor
+          image: registry.access.redhat.com/ubi8/ubi-minimal:8.6
+          command: ["sleep", "infinity"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi

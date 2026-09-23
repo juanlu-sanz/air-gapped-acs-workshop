@@ -334,6 +334,19 @@ IMPORTANT: In production air-gapped environments, automate this process. Downloa
 | Manual upload of definitions via `roxctl scanner upload-db` keeps the database current
 |===
 
+== What this does NOT solve (yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining problem | Addressed in
+
+| Too many CVEs to act on - no prioritization or risk acceptance workflows
+| xref:04-risk-mitigation.adoc[Step 4: Risk Mitigation]
+
+| No policy enforcement to block vulnerable deployments
+| xref:04-risk-mitigation.adoc#policy-enforcement[Step 4: Deploy-time policy enforcement]
+|===
+
 == Official documentation
 
 * link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/operating/examine-images-for-vulnerabilities#delegated-image-scanning_examine-images-for-vulnerabilities[Delegated image scanning in RHACS 4.11]

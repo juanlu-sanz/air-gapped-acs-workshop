@@ -19,6 +19,7 @@ This workshop walks participants through three RHACS capabilities on OpenShift: 
 - `01-reporting/` - Report schedule examples, API integration samples
 - `02-compliance/` - TailoredProfile, ScanSettingBinding, and compliance CRs
 - `03-airgapped-scanning/` - NetworkPolicy, delegated scanning config, test workloads
+- `04-risk-mitigation/` - Vulnerable workloads for CVE triage, custom ACS policy for enforcement exercises
 - Steps are progressive: each builds on the previous one
 
 ## AsciiDoc formatting

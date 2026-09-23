@@ -1,0 +1,528 @@
+= Step 4 - Risk Mitigation: CVE triage, policy enforcement, and risk acceptance
+include::_attributes.adoc[]
+
+ACS collects vulnerability data from every image running across your clusters. This step shows how to go beyond raw CVE lists: evaluate severity with Red Hat VEX data, defer or exclude CVEs through formal risk acceptance workflows, and enforce deploy-time policies that block known-vulnerable images.
+
+== Prerequisites
+
+* ACS Central running on the hub cluster from xref:00-setup.adoc[Cluster Setup]
+* At least one secured cluster registered and healthy
+* `ROX_API_TOKEN` and `ACS_CENTRAL_ROUTE` exported as described in xref:00-setup.adoc#export-variables[Export Workshop Variables]
+
+== How it works
+
+ACS assigns a risk score to every deployment based on multiple factors: CVE severity, whether the container runs as privileged, whether it is exposed to the internet, the age of the image, and more. The Risk view ranks deployments so you can focus on the highest-priority items first.
+
+When a CVE does not apply to your environment or cannot be fixed immediately, ACS supports two exception workflows:
+
+* *Deferral* - postpones action on a CVE for a set period with a justification. The CVE remains tracked but is excluded from fixable counts and reports until the deferral expires.
+* *False positive* - permanently excludes a CVE when it does not apply to your environment. Requires a justification.
+
+Policies turn vulnerability data into automated guardrails. A deploy-time policy can block new deployments that contain critical fixable CVEs, preventing known-vulnerable images from reaching production.
+
+== Steps to apply
+
+[#deploy-vulnerable]
+=== 1. Deploy workloads with known vulnerabilities
+
+*What:* Deploy a set of intentionally outdated images so there are real CVEs to triage.
+
+*Why:* The risk and triage exercises need deployments with actual vulnerability data. These images use pinned older tags from `registry.access.redhat.com` that carry known critical and important CVEs.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 04-risk-mitigation/vulnerable-workloads.yaml --context secured
+----
+
+Wait for all pods to be running:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc wait --for=condition=Available deployment --all \
+  -n risk-workshop --context secured --timeout=120s
+----
+
+NOTE: ACS needs a few minutes to scan the images after the deployments appear. If the vulnerability data is empty, wait and refresh.
+
+.Verify: Deployments are visible in ACS with vulnerability data
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/deployments?query=Namespace:risk-workshop" | \
+  jq '.deployments[] | {name: .name, namespace: .namespace}'
+----
+
+[.console-output]
+[source,bash]
+----
+{
+  "name": "legacy-app",
+  "namespace": "risk-workshop"
+}
+{
+  "name": "web-frontend",
+  "namespace": "risk-workshop"
+}
+{
+  "name": "batch-processor",
+  "namespace": "risk-workshop"
+}
+----
+====
+
+'''
+
+[#risk-view]
+=== 2. Explore the risk view and priority scoring
+
+*What:* Walk through the ACS Risk view and understand how deployments are ranked by risk priority.
+
+*Why:* With hundreds of deployments across clusters, you cannot triage everything at once. The risk score helps you focus on the deployments that pose the most risk based on multiple factors - not just CVE count.
+
+In the ACS console, navigate to Risk. The deployments are sorted by risk priority (highest first). Click on one of the `risk-workshop` deployments to see the risk indicators panel on the right.
+
+Risk factors include:
+
+[cols="2,3",options="header"]
+|===
+| Factor | What it measures
+
+| Image vulnerabilities
+| Number and severity of CVEs in the container image
+
+| Service configuration
+| Whether the container runs as root, privileged, or with host network
+
+| Service reachability
+| Whether the deployment is exposed via a route or load balancer
+
+| Image freshness
+| How old the image tag is - older images are more likely to have unpatched CVEs
+
+| Components in image
+| Total number of software components - more components mean a larger attack surface
+|===
+
+You can also query the risk data from the API:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/deploymentswithprocessinfo?query=Namespace:risk-workshop&pagination.sortOption.field=Priority&pagination.sortOption.reversed=false" | \
+  jq '.deployments[] | {name: .deployment.name, priority: .deployment.priority, riskScore: .deployment.riskScore}'
+----
+
+.Verify: Deployments are ranked by risk
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+{
+  "name": "web-frontend",
+  "priority": "1",
+  "riskScore": ...
+}
+{
+  "name": "legacy-app",
+  "priority": "2",
+  "riskScore": ...
+}
+{
+  "name": "batch-processor",
+  "priority": "3",
+  "riskScore": ...
+}
+----
+
+The exact order depends on the CVEs present and the deployment configuration. Deployments with more severe CVEs and riskier configurations rank higher.
+====
+
+'''
+
+[#vex-data]
+=== 3. Evaluate CVEs against Red Hat VEX data
+
+*What:* Compare how ACS reports CVE severity on Red Hat images versus the raw NVD/CVSS score.
+
+*Why:* The National Vulnerability Database (NVD) assigns CVSS scores based on the upstream vulnerability. Red Hat's security team evaluates each CVE against RHEL-based packages and often assigns a different severity based on backported patches, compile-time mitigations, or configuration defaults that reduce the actual impact. ACS uses Red Hat's assessment for images from `registry.access.redhat.com` and `registry.redhat.io`, which reduces false positives compared to scanners that rely only on NVD.
+
+In the ACS console, navigate to Vulnerability Management > Workload CVEs. Filter by namespace `risk-workshop`. Click on any CVE to see its detail page.
+
+On the CVE detail page, note the *CVSS score* shown by ACS. Then open the Red Hat Security page for the same CVE to compare:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+# Pick a CVE from the risk-workshop deployments
+CVE_SAMPLE=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/images/vulnerabilities?query=Namespace:risk-workshop%2BSeverity:CRITICAL_VULNERABILITY_SEVERITY" | \
+  jq -r '.imageVulnerabilities[0].cve')
+
+echo "CVE: ${CVE_SAMPLE}"
+echo "ACS detail: https://${ACS_CENTRAL_ROUTE}/main/vulnerabilities/workload-cves/cves/${CVE_SAMPLE}"
+echo "Red Hat page: https://access.redhat.com/security/cve/${CVE_SAMPLE}"
+----
+
+Open both links and compare:
+
+* ACS severity vs NVD CVSS base score
+* Whether Red Hat has marked the CVE as "not affected" or assigned a lower severity for RHEL
+* Whether a fix is available in a newer RHEL/UBI package version
+
+TIP: When the ACS severity is lower than the NVD score, it means Red Hat's analysis determined the vulnerability has reduced impact on RHEL-based images - for example, because a vulnerable code path is not compiled in, or a default configuration mitigates the issue.
+
+.Verify: You can see the difference between ACS and NVD severity
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/images/vulnerabilities?query=Namespace:risk-workshop%2BSeverity:CRITICAL_VULNERABILITY_SEVERITY" | \
+  jq '.imageVulnerabilities[:3] | .[] | {cve: .cve, severity: .severity, cvss: .cvssScore}'
+----
+
+[.console-output]
+[source,bash]
+----
+{
+  "cve": "CVE-XXXX-XXXXX",
+  "severity": "CRITICAL_VULNERABILITY_SEVERITY",
+  "cvss": 9.8
+}
+...
+----
+
+Compare these CVSS scores with the NVD page for the same CVE. Red Hat-sourced scores may differ.
+====
+
+'''
+
+[#defer-false-positive]
+=== 4. Defer a CVE and mark a false positive
+
+*What:* Use ACS exception workflows to defer a CVE and mark another as a false positive.
+
+*Why:* Not every CVE can or should be fixed immediately. Deferral gives the team time to plan remediation while documenting the risk acceptance. False positives exclude CVEs that do not apply to your environment - for example, a vulnerability in a feature your application does not use.
+
+==== Defer a CVE
+
+In the ACS console, navigate to Vulnerability Management > Workload CVEs. Filter by namespace `risk-workshop` and severity `Critical`. Click on a CVE, then click "Defer CVE".
+
+Fill in:
+
+* Scope: `All images` (applies to every deployment using an affected image)
+* Expiry: `30 days`
+* Justification: `Pending next maintenance window - tracked in ticket XXXX`
+
+Click Submit.
+
+You can also create the deferral via the API:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+# Get a CVE to defer
+DEFER_CVE=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/images/vulnerabilities?query=Namespace:risk-workshop%2BSeverity:CRITICAL_VULNERABILITY_SEVERITY%2BFixable:true" | \
+  jq -r '.imageVulnerabilities[0].cve')
+
+# Create a deferral request
+curl -sk -X POST -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/vulnerability-exceptions/deferral" \
+  -d "{
+    \"cves\": [\"${DEFER_CVE}\"],
+    \"comment\": \"Pending next maintenance window\",
+    \"scope\": {\"imageScope\": {\"allImages\": true}},
+    \"expiresOn\": \"$(date -u -v+30d '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || date -u -d '+30 days' '+%Y-%m-%dT%H:%M:%SZ')\"
+  }"
+----
+
+==== Mark a CVE as false positive
+
+Pick a different CVE - ideally one with a lower severity or one that affects a component your application does not exercise.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+# Get a moderate CVE to mark as false positive
+FP_CVE=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/images/vulnerabilities?query=Namespace:risk-workshop%2BSeverity:MODERATE_VULNERABILITY_SEVERITY" | \
+  jq -r '.imageVulnerabilities[0].cve')
+
+curl -sk -X POST -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/vulnerability-exceptions/false-positive" \
+  -d "{
+    \"cves\": [\"${FP_CVE}\"],
+    \"comment\": \"Component not used in this application - confirmed by dev team\",
+    \"scope\": {\"imageScope\": {\"allImages\": true}}
+  }"
+----
+
+.Verify: Exceptions are registered
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/vulnerability-exceptions/requests?query=" | \
+  jq '.requests[] | {status: .status, cves: .cves, type: .type}'
+----
+
+[.console-output]
+[source,bash]
+----
+{
+  "status": "APPROVED",
+  "cves": ["CVE-..."],
+  "type": "DEFERRAL"
+}
+{
+  "status": "APPROVED",
+  "cves": ["CVE-..."],
+  "type": "FALSE_POSITIVE"
+}
+----
+
+In the ACS UI, navigate to Vulnerability Management > Workload CVEs and toggle the "Observed" filter. Deferred CVEs move to the "Deferred" tab. False positives move to the "False positive" tab.
+====
+
+'''
+
+[#policy-enforcement]
+=== 5. Create and enforce a deploy-time policy
+
+*What:* Import a custom ACS policy that flags deployments with critical fixable CVEs, then switch it from inform to enforce mode.
+
+*Why:* Policies are the bridge between vulnerability data and automated action. Starting in inform mode lets you see what would be blocked without disrupting existing workloads. Switching to enforce mode activates the admission controller to reject new deployments that violate the policy.
+
+==== Import the policy
+
+In the ACS console, go to Platform Configuration > Policy Management. Click "Import policy" and upload `04-risk-mitigation/workshop-policy.yaml`.
+
+You can also import via the API:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk -X POST -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/policies/import" \
+  -d @04-risk-mitigation/workshop-policy.yaml
+----
+
+==== Observe violations in inform mode
+
+The policy is imported in inform mode (no enforcement actions). Navigate to Violations in the ACS console. You should see violations from the `risk-workshop` deployments matching the policy criteria.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/alerts?query=Policy:Workshop+-+Critical+Fixable+CVEs%2BNamespace:risk-workshop" | \
+  jq '.alerts[] | {deployment: .deployment.name, policy: .policy.name, state: .state}'
+----
+
+.Verify: Violations are visible
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+{
+  "deployment": "legacy-app",
+  "policy": "Workshop - Critical Fixable CVEs",
+  "state": "ACTIVE"
+}
+...
+----
+====
+
+==== Switch to enforce mode
+
+Edit the policy in the ACS UI: Platform Configuration > Policy Management, find "Workshop - Critical Fixable CVEs", click Edit, and under "Response method" change to "Inform and enforce". Under "Enforcement behavior", enable "Deploy-time enforcement".
+
+You can also patch it via the API:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+POLICY_ID=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/policies" | \
+  jq -r '.policies[] | select(.name=="Workshop - Critical Fixable CVEs") | .id')
+
+curl -sk -X PATCH -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/policies/${POLICY_ID}" \
+  -d '{
+    "enforcementActions": ["SCALE_TO_ZERO_ENFORCEMENT"]
+  }'
+----
+
+==== Test enforcement
+
+Try deploying a new pod with a vulnerable image. The admission controller should block it:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc run enforce-test --image=registry.access.redhat.com/ubi8/ubi:8.6 \
+  --restart=Never -n risk-workshop --context secured \
+  -- sleep infinity
+----
+
+.Verify: Deployment is blocked
+[%collapsible]
+====
+The command should return an admission error similar to:
+
+[.console-output]
+[source,bash]
+----
+Error from server: admission webhook "policyeval.stackrox.io" denied the request:
+Action enforced by ACS policy "Workshop - Critical Fixable CVEs"
+----
+
+If the pod was created, the admission controller may not have caught it in time. Check the Violations view in ACS - the enforcement action (scale-to-zero) should have scaled the deployment down.
+====
+
+'''
+
+[#exceptions-at-scale]
+=== 6. Review risk acceptance at scale
+
+*What:* See how ACS exception scopes reduce repetitive triage when the same CVE appears across multiple deployments sharing a base image.
+
+*Why:* In a fleet of 20+ clusters with shared base images (like a common LDAP sync cron job), the same CVE surfaces in every deployment using that image. Scoping exceptions to the image level applies the decision once across all affected deployments.
+
+Navigate to Vulnerability Management > Exception Management in the ACS console. Review the pending and approved requests created in Step 4.
+
+Notice that the deferral scoped to "All images" applies across all three deployments in `risk-workshop` because they share UBI 8 base layers.
+
+Query the API to see how many deployments each exception covers:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/vulnerability-exceptions/requests?query=" | \
+  jq '.requests[] | {cves: .cves, scope: .scope, status: .status}'
+----
+
+.Verify: Exception scope covers multiple deployments
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+{
+  "cves": ["CVE-..."],
+  "scope": {
+    "imageScope": {
+      "allImages": true
+    }
+  },
+  "status": "APPROVED"
+}
+----
+
+Navigate to the deferred CVE in the Workload CVEs view and confirm it is hidden from the "Observed" tab across all three deployments.
+====
+
+'''
+
+== What this solves (compared to previous steps)
+
+[cols="2,3",options="header"]
+|===
+| Problem from previous steps | How this step solves it
+
+| Vulnerability reports show too many CVEs to act on
+| Risk scoring and VEX data help prioritize the CVEs that actually matter in your environment
+
+| No formal process to accept risk on CVEs that cannot be fixed now
+| Deferral and false positive workflows document risk acceptance decisions with justifications and expiry dates
+
+| Vulnerability data is informational only - nothing prevents deploying known-vulnerable images
+| Deploy-time policy enforcement blocks new deployments with critical fixable CVEs
+|===
+
+== What this does NOT solve (yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining problem | Addressed in
+
+| No custom dashboards for monitoring vulnerability and compliance trends
+| A future observability session will cover Grafana dashboards with Prometheus metrics and ACS API data
+
+| ACS policies and exceptions are configured manually - not automated across clusters
+| A future integration session will cover ACM-based automation for scaling ACS across 35+ clusters
+|===
+
+== Official documentation
+
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/operating/managing-vulnerabilities#managing-vulnerability-exceptions_managing-vulnerabilities[Managing vulnerability exceptions in RHACS 4.11]
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/operating/managing-vulnerabilities#viewing-risk_managing-vulnerabilities[Viewing risk in RHACS 4.11]
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/operating/managing-security-policies[Managing security policies in RHACS 4.11]
+* link:https://access.redhat.com/security/vulnerabilities[Red Hat Product Security Center]
+
+== Alternatives considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| ACS risk scoring and exception workflows (this workshop)
+| Built into ACS with no extra tooling. Supports deferral, false positive, and policy enforcement. Exception scopes reduce repetitive triage across shared images.
+
+| External vulnerability management platform (e.g., Snyk, Prisma)
+| Offers cross-platform vulnerability management but duplicates ACS scanning and does not integrate with the Compliance Operator or Red Hat VEX data natively.
+
+| Manual spreadsheet tracking
+| Common in early adoption but does not scale, lacks automation, and provides no enforcement capability.
+|===
+
+'''
+
+== Reset
+
+Remove the vulnerable workloads, the custom policy, and any exception requests.
+
+[.console-input]
+[source,bash]
+----
+# Delete the vulnerable workloads namespace
+oc delete namespace risk-workshop --context secured --ignore-not-found --wait
+
+# Delete the custom policy
+POLICY_ID=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/policies" | \
+  jq -r '.policies[] | select(.name=="Workshop - Critical Fixable CVEs") | .id')
+
+if [ -n "${POLICY_ID}" ]; then
+  curl -sk -X DELETE -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+    "https://${ACS_CENTRAL_ROUTE}/v1/policies/${POLICY_ID}"
+fi
+
+# Cancel pending exception requests from the workshop
+for REQ_ID in $(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v2/vulnerability-exceptions/requests?query=" | \
+  jq -r '.requests[].id'); do
+  curl -sk -X DELETE -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+    "https://${ACS_CENTRAL_ROUTE}/v2/vulnerability-exceptions/requests/${REQ_ID}"
+done
+
+# Clean up the enforce-test pod if it exists
+oc delete pod enforce-test -n risk-workshop --context secured --ignore-not-found
+----

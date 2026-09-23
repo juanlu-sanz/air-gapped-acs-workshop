@@ -35,6 +35,12 @@ This workshop covers three areas of Red Hat Advanced Cluster Security for Kubern
 * xref:03-airgapped-scanning.adoc#push-test-image[Scan a test image]
 * xref:03-airgapped-scanning.adoc#offline-vuln-db[Offline vulnerability database]
 
+[.tile]
+.xref:04-risk-mitigation.adoc[Step 4: Risk mitigation]
+* xref:04-risk-mitigation.adoc#risk-view[Risk view and priority scoring]
+* xref:04-risk-mitigation.adoc#vex-data[CVEs and Red Hat VEX data]
+* xref:04-risk-mitigation.adoc#policy-enforcement[Deploy-time policy enforcement]
+
 == Environment
 
 [cols="2,3",options="header"]
