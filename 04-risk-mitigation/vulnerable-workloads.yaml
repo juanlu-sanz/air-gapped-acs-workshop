@@ -57,7 +57,8 @@ spec:
     spec:
       containers:
         - name: web-frontend
-          image: registry.access.redhat.com/ubi8/nginx-120:1-86
+          image: registry.access.redhat.com/ubi8/nginx-120:1-10
+          command: ["sleep", "infinity"]
           resources:
             requests:
               cpu: 50m
@@ -65,19 +66,6 @@ spec:
             limits:
               cpu: 200m
               memory: 256Mi
-          ports:
-            - containerPort: 8080
-              protocol: TCP
-          readinessProbe:
-            tcpSocket:
-              port: 8080
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          livenessProbe:
-            tcpSocket:
-              port: 8080
-            initialDelaySeconds: 10
-            periodSeconds: 30
 ---
 apiVersion: apps/v1
 kind: Deployment

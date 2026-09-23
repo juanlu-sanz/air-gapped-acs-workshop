@@ -83,7 +83,8 @@ curl -sk -X POST -H "Authorization: Bearer ${ROX_API_TOKEN}" \
     \"vulnReportFilters\": {
       \"severities\": [\"CRITICAL_VULNERABILITY_SEVERITY\", \"IMPORTANT_VULNERABILITY_SEVERITY\"],
       \"fixability\": \"FIXABLE\",
-      \"imageTypes\": [\"DEPLOYED\"]
+      \"imageTypes\": [\"DEPLOYED\"],
+      \"sinceLastSentScheduledReport\": true
     },
     \"resourceScope\": {
       \"collectionScope\": {\"collectionId\": \"${COLLECTION_ID}\"}

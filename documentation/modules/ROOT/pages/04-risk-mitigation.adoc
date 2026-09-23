@@ -114,7 +114,7 @@ You can also query the risk data from the API:
 [source,bash,subs="+macros,+attributes"]
 ----
 curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
-  "https://${ACS_CENTRAL_ROUTE}/v1/deploymentswithprocessinfo?query=Namespace:risk-workshop&pagination.sortOption.field=Priority&pagination.sortOption.reversed=false" | \
+  "https://${ACS_CENTRAL_ROUTE}/v1/deploymentswithprocessinfo?query=Namespace:risk-workshop&pagination.sortOption.field=Deployment+Risk+Priority&pagination.sortOption.reversed=false" | \
   jq '.deployments[] | {name: .deployment.name, priority: .deployment.priority, riskScore: .deployment.riskScore}'
 ----
 
@@ -161,9 +161,19 @@ On the CVE detail page, note the *CVSS score* shown by ACS. Then open the Red Ha
 [source,bash,subs="+macros,+attributes"]
 ----
 # Pick a CVE from the risk-workshop deployments
+# Get the image ID from the legacy-app deployment
+LEGACY_ID=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/deployments?query=Namespace:risk-workshop" | \
+  jq -r '.deployments[] | select(.name=="legacy-app") | .id')
+
+IMAGE_SHA=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/deployments/${LEGACY_ID}" | \
+  jq -r '.containers[0].image.id')
+
+# Pick an Important+Fixable CVE from that image
 CVE_SAMPLE=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
-  "https://${ACS_CENTRAL_ROUTE}/v2/images/vulnerabilities?query=Namespace:risk-workshop%2BSeverity:CRITICAL_VULNERABILITY_SEVERITY" | \
-  jq -r '.imageVulnerabilities[0].cve')
+  "https://${ACS_CENTRAL_ROUTE}/v1/images/${IMAGE_SHA}" | \
+  jq -r '[.scan.components[].vulns[]? | select(.severity == "IMPORTANT_VULNERABILITY_SEVERITY" and .fixedBy != "")] | .[0].cve')
 
 echo "CVE: ${CVE_SAMPLE}"
 echo "ACS detail: https://${ACS_CENTRAL_ROUTE}/main/vulnerabilities/workload-cves/cves/${CVE_SAMPLE}"
@@ -185,8 +195,8 @@ TIP: When the ACS severity is lower than the NVD score, it means Red Hat's analy
 [source,bash,subs="+macros,+attributes"]
 ----
 curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
-  "https://${ACS_CENTRAL_ROUTE}/v2/images/vulnerabilities?query=Namespace:risk-workshop%2BSeverity:CRITICAL_VULNERABILITY_SEVERITY" | \
-  jq '.imageVulnerabilities[:3] | .[] | {cve: .cve, severity: .severity, cvss: .cvssScore}'
+  "https://${ACS_CENTRAL_ROUTE}/v1/images/${IMAGE_SHA}" | \
+  jq '[.scan.components[].vulns[]? | select(.severity == "IMPORTANT_VULNERABILITY_SEVERITY" and .fixedBy != "")] | .[:3] | .[] | {cve: .cve, severity: .severity, cvss: .cvss, fixedBy: .fixedBy}'
 ----
 
 [.console-output]
@@ -229,10 +239,18 @@ You can also create the deferral via the API:
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-# Get a CVE to defer
+# Get a CVE to defer (using the legacy-app image)
+LEGACY_ID=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/deployments?query=Namespace:risk-workshop" | \
+  jq -r '.deployments[] | select(.name=="legacy-app") | .id')
+
+IMAGE_SHA=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/deployments/${LEGACY_ID}" | \
+  jq -r '.containers[0].image.id')
+
 DEFER_CVE=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
-  "https://${ACS_CENTRAL_ROUTE}/v2/images/vulnerabilities?query=Namespace:risk-workshop%2BSeverity:CRITICAL_VULNERABILITY_SEVERITY%2BFixable:true" | \
-  jq -r '.imageVulnerabilities[0].cve')
+  "https://${ACS_CENTRAL_ROUTE}/v1/images/${IMAGE_SHA}" | \
+  jq -r '[.scan.components[].vulns[]? | select(.severity == "IMPORTANT_VULNERABILITY_SEVERITY" and .fixedBy != "")] | .[0].cve')
 
 # Create a deferral request
 curl -sk -X POST -H "Authorization: Bearer ${ROX_API_TOKEN}" \
@@ -241,8 +259,17 @@ curl -sk -X POST -H "Authorization: Bearer ${ROX_API_TOKEN}" \
   -d "{
     \"cves\": [\"${DEFER_CVE}\"],
     \"comment\": \"Pending next maintenance window\",
-    \"scope\": {\"imageScope\": {\"allImages\": true}},
-    \"expiresOn\": \"$(date -u -v+30d '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || date -u -d '+30 days' '+%Y-%m-%dT%H:%M:%SZ')\"
+    \"scope\": {
+      \"imageScope\": {
+        \"registry\": \"registry.access.redhat.com\",
+        \"remote\": \"ubi8/ubi\",
+        \"tag\": \"8.6\"
+      }
+    },
+    \"exceptionExpiry\": {
+      \"expiryType\": \"TIME\",
+      \"expiresOn\": \"$(date -u -v+30d '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || date -u -d '+30 days' '+%Y-%m-%dT%H:%M:%SZ')\"
+    }
   }"
 ----
 
@@ -255,8 +282,8 @@ Pick a different CVE - ideally one with a lower severity or one that affects a c
 ----
 # Get a moderate CVE to mark as false positive
 FP_CVE=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
-  "https://${ACS_CENTRAL_ROUTE}/v2/images/vulnerabilities?query=Namespace:risk-workshop%2BSeverity:MODERATE_VULNERABILITY_SEVERITY" | \
-  jq -r '.imageVulnerabilities[0].cve')
+  "https://${ACS_CENTRAL_ROUTE}/v1/images/${IMAGE_SHA}" | \
+  jq -r '[.scan.components[].vulns[]? | select(.severity == "MODERATE_VULNERABILITY_SEVERITY")] | .[0].cve')
 
 curl -sk -X POST -H "Authorization: Bearer ${ROX_API_TOKEN}" \
   -H "Content-Type: application/json" \
@@ -264,7 +291,13 @@ curl -sk -X POST -H "Authorization: Bearer ${ROX_API_TOKEN}" \
   -d "{
     \"cves\": [\"${FP_CVE}\"],
     \"comment\": \"Component not used in this application - confirmed by dev team\",
-    \"scope\": {\"imageScope\": {\"allImages\": true}}
+    \"scope\": {
+      \"imageScope\": {
+        \"registry\": \"registry.access.redhat.com\",
+        \"remote\": \"ubi8/ubi\",
+        \"tag\": \"8.6\"
+      }
+    }
   }"
 ----
 
@@ -306,6 +339,8 @@ In the ACS UI, navigate to Vulnerability Management > Workload CVEs and toggle t
 
 *Why:* Policies are the bridge between vulnerability data and automated action. Starting in inform mode lets you see what would be blocked without disrupting existing workloads. Switching to enforce mode activates the admission controller to reject new deployments that violate the policy.
 
+NOTE: The workshop policy uses "Important" severity rather than "Critical" because ACS uses Red Hat VEX severity for RHEL-based images. On UBI images, most CVEs that NVD scores as Critical are downgraded to Important by Red Hat's security team. This is the VEX adjustment in action.
+
 ==== Import the policy
 
 In the ACS console, go to Platform Configuration > Policy Management. Click "Import policy" and upload `04-risk-mitigation/workshop-policy.yaml`.
@@ -315,11 +350,14 @@ You can also import via the API:
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-curl -sk -X POST -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+grep -v '^#' 04-risk-mitigation/workshop-policy.yaml | \
+  curl -sk -X POST -H "Authorization: Bearer ${ROX_API_TOKEN}" \
   -H "Content-Type: application/json" \
   "https://${ACS_CENTRAL_ROUTE}/v1/policies/import" \
-  -d @04-risk-mitigation/workshop-policy.yaml
+  -d @-
 ----
+
+NOTE: The `grep -v '^#'` strips the comment lines from the file before sending it to the API, which expects pure JSON.
 
 ==== Observe violations in inform mode
 
@@ -329,7 +367,7 @@ The policy is imported in inform mode (no enforcement actions). Navigate to Viol
 [source,bash,subs="+macros,+attributes"]
 ----
 curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
-  "https://${ACS_CENTRAL_ROUTE}/v1/alerts?query=Policy:Workshop+-+Critical+Fixable+CVEs%2BNamespace:risk-workshop" | \
+  "https://${ACS_CENTRAL_ROUTE}/v1/alerts?query=Policy:Workshop+-+Important+Fixable+CVEs%2BNamespace:risk-workshop" | \
   jq '.alerts[] | {deployment: .deployment.name, policy: .policy.name, state: .state}'
 ----
 
@@ -341,7 +379,7 @@ curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
 ----
 {
   "deployment": "legacy-app",
-  "policy": "Workshop - Critical Fixable CVEs",
+  "policy": "Workshop - Important Fixable CVEs",
   "state": "ACTIVE"
 }
 ...
@@ -350,23 +388,25 @@ curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
 
 ==== Switch to enforce mode
 
-Edit the policy in the ACS UI: Platform Configuration > Policy Management, find "Workshop - Critical Fixable CVEs", click Edit, and under "Response method" change to "Inform and enforce". Under "Enforcement behavior", enable "Deploy-time enforcement".
+Edit the policy in the ACS UI: Platform Configuration > Policy Management, find "Workshop - Important Fixable CVEs", click Edit, and under "Response method" change to "Inform and enforce". Under "Enforcement behavior", enable "Deploy-time enforcement".
 
-You can also patch it via the API:
+You can also enable it via the API by fetching the full policy, adding the enforcement action, and sending a PUT:
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
 POLICY_ID=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
   "https://${ACS_CENTRAL_ROUTE}/v1/policies" | \
-  jq -r '.policies[] | select(.name=="Workshop - Critical Fixable CVEs") | .id')
+  jq -r '.policies[] | select(.name=="Workshop - Important Fixable CVEs") | .id')
 
-curl -sk -X PATCH -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+POLICY_JSON=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/policies/${POLICY_ID}")
+
+echo "${POLICY_JSON}" | jq '.enforcementActions = ["SCALE_TO_ZERO_ENFORCEMENT"]' | \
+  curl -sk -X PUT -H "Authorization: Bearer ${ROX_API_TOKEN}" \
   -H "Content-Type: application/json" \
   "https://${ACS_CENTRAL_ROUTE}/v1/policies/${POLICY_ID}" \
-  -d '{
-    "enforcementActions": ["SCALE_TO_ZERO_ENFORCEMENT"]
-  }'
+  -d @-
 ----
 
 ==== Test enforcement
@@ -390,7 +430,7 @@ The command should return an admission error similar to:
 [source,bash]
 ----
 Error from server: admission webhook "policyeval.stackrox.io" denied the request:
-Action enforced by ACS policy "Workshop - Critical Fixable CVEs"
+Action enforced by ACS policy "Workshop - Important Fixable CVEs"
 ----
 
 If the pod was created, the admission controller may not have caught it in time. Check the Violations view in ACS - the enforcement action (scale-to-zero) should have scaled the deployment down.
@@ -508,7 +548,7 @@ oc delete namespace risk-workshop --context secured --ignore-not-found --wait
 # Delete the custom policy
 POLICY_ID=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
   "https://${ACS_CENTRAL_ROUTE}/v1/policies" | \
-  jq -r '.policies[] | select(.name=="Workshop - Critical Fixable CVEs") | .id')
+  jq -r '.policies[] | select(.name=="Workshop - Important Fixable CVEs") | .id')
 
 if [ -n "${POLICY_ID}" ]; then
   curl -sk -X DELETE -H "Authorization: Bearer ${ROX_API_TOKEN}" \

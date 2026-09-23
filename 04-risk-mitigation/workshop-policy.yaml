@@ -4,9 +4,9 @@
 {
   "policies": [
     {
-      "name": "Workshop - Critical Fixable CVEs",
-      "description": "Flags deployments that contain critical-severity CVEs with an available fix. Used in the risk mitigation workshop to demonstrate inform and enforce modes.",
-      "rationale": "Critical CVEs with available fixes represent the highest-priority remediation targets. Blocking these at deploy time prevents known-vulnerable images from reaching production.",
+      "name": "Workshop - Important Fixable CVEs",
+      "description": "Flags deployments that contain important-severity or higher CVEs with an available fix. Uses Red Hat severity (not NVD) so it reflects actual risk on RHEL-based images.",
+      "rationale": "Important and Critical CVEs with available fixes are the highest-priority remediation targets. On Red Hat images, ACS uses Red Hat VEX severity, which is often lower than the raw NVD score.",
       "remediation": "Update the image to a version that includes the fix. Check the Fixed In Version column in the ACS vulnerability view or the Red Hat CVE page for the patched version.",
       "categories": [
         "Vulnerability Management"
@@ -18,7 +18,7 @@
       "enforcementActions": [],
       "policySections": [
         {
-          "sectionName": "Critical fixable CVEs",
+          "sectionName": "Important fixable CVEs",
           "policyGroups": [
             {
               "fieldName": "Fixed By",
@@ -36,7 +36,7 @@
               "negate": false,
               "values": [
                 {
-                  "value": "CRITICAL"
+                  "value": "IMPORTANT"
                 }
               ]
             }
