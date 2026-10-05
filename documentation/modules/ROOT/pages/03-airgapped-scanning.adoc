@@ -28,6 +28,8 @@ In a real air-gapped environment, the vulnerability database also needs manual u
 [#simulate-airgap]
 === 1. Simulate an air-gapped registry
 
+icon:clock[] ~15 seconds (registry route exposure may take up to 15s if not already exposed)
+
 *What:* Apply a NetworkPolicy that blocks traffic from outside the secured cluster to the internal OpenShift registry.
 
 *Why:* This simulates the air-gap condition where Central (on the hub cluster) cannot directly pull images from the secured cluster's registry. In production, this isolation happens at the network level (firewall rules, separate VLANs, or physically disconnected networks). Here we use a NetworkPolicy as a demonstration tool.
@@ -272,6 +274,8 @@ A non-zero component count confirms Scanner-slim indexed the image and Central m
 
 [#offline-vuln-db]
 === 5. Update the vulnerability database offline
+
+icon:clock[] ~5 minutes (download ~500 MB, upload ~1 minute)
 
 *What:* Download the Scanner V4 vulnerability definitions on a connected workstation and upload them to Central.
 

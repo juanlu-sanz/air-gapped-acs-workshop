@@ -25,6 +25,8 @@ Policies turn vulnerability data into automated guardrails. A deploy-time policy
 [#deploy-vulnerable]
 === 1. Deploy workloads with known vulnerabilities
 
+icon:clock[] ~20 seconds (image pull + deployment rollout)
+
 *What:* Deploy a set of intentionally outdated images so there are real CVEs to triage.
 
 *Why:* The risk and triage exercises need deployments with actual vulnerability data. These images use pinned older tags from `registry.access.redhat.com` that carry known critical and important CVEs.
@@ -234,6 +236,8 @@ Fill in:
 
 Click Submit.
 
+NOTE: Exception requests are created with `PENDING` status. In ACS, the requester cannot self-approve their own exceptions. An administrator or a different user with the `VulnerabilityManagementApprovals` permission must approve them. In a workshop setting, you can approve exceptions through the ACS UI under Vulnerability Management > Exception Management.
+
 You can also create the deferral via the API:
 
 [.console-input]
@@ -411,29 +415,30 @@ echo "${POLICY_JSON}" | jq '.enforcementActions = ["SCALE_TO_ZERO_ENFORCEMENT"]'
 
 ==== Test enforcement
 
-Try deploying a new pod with a vulnerable image. The admission controller should block it:
+Try deploying a new pod with a vulnerable image. The enforcement action (`SCALE_TO_ZERO_ENFORCEMENT`) works on Deployments, not bare Pods. Create a Deployment instead of `oc run`:
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-oc run enforce-test --image=registry.access.redhat.com/ubi8/ubi:8.6 \
-  --restart=Never -n risk-workshop --context secured \
-  -- sleep infinity
+oc create deployment enforce-test \
+  --image=registry.access.redhat.com/ubi8/ubi:8.6 \
+  -n risk-workshop --context secured
 ----
 
-.Verify: Deployment is blocked
+.Verify: Deployment is scaled to zero
 [%collapsible]
 ====
-The command should return an admission error similar to:
+Wait a few seconds, then check if ACS scaled the deployment down:
 
-[.console-output]
-[source,bash]
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
 ----
-Error from server: admission webhook "policyeval.stackrox.io" denied the request:
-Action enforced by ACS policy "Workshop - Important Fixable CVEs"
+oc get deployment enforce-test -n risk-workshop --context secured
 ----
 
-If the pod was created, the admission controller may not have caught it in time. Check the Violations view in ACS - the enforcement action (scale-to-zero) should have scaled the deployment down.
+The replicas should be 0. Check the Violations view in ACS - the enforcement action should show "Scaled to zero replicas".
+
+NOTE: `SCALE_TO_ZERO_ENFORCEMENT` does not block creation at admission time. It allows the Deployment to be created, then scales it to zero after ACS detects the violation. This is a softer enforcement model that avoids blocking CI/CD pipelines while still preventing vulnerable workloads from running.
 ====
 
 '''
@@ -563,6 +568,6 @@ for REQ_ID in $(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
     "https://${ACS_CENTRAL_ROUTE}/v2/vulnerability-exceptions/requests/${REQ_ID}"
 done
 
-# Clean up the enforce-test pod if it exists
-oc delete pod enforce-test -n risk-workshop --context secured --ignore-not-found
+# Clean up the enforce-test deployment if it exists
+oc delete deployment enforce-test -n risk-workshop --context secured --ignore-not-found
 ----
