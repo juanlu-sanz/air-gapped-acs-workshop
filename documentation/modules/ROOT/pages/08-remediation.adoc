@@ -197,7 +197,7 @@ Allow 1-2 minutes for re-evaluation, then check:
 
 * *Risk* (namespace `acs-workshop`): `node-agent` and `legacy-frontend` fall down the ranking. Their risk indicators no longer show privileged mode, root, external secrets in env vars, or old images. `legacy-frontend` now runs a distroless image with no shell or package manager: the Components Useful for Attackers indicator disappears.
 * *Violations*: the deploy-time violations for the old pod specs are resolved. Only `payments-api` still shows Log4Shell and untrusted registry, both inform-only.
-* *Vulnerability Management > Workload CVEs* (namespace `acs-workshop`): the fixable Important/Critical CVE count drops sharply. What remains comes mostly from `payments-api`, the accepted risk.
+* *Vulnerability Management > Results > User Workloads* (namespace `acs-workshop`): the fixable Important/Critical CVE count drops sharply. What remains comes mostly from `payments-api`, the accepted risk.
 * *Network > Network Graph*: `acs-workshop` now shows NetworkPolicies. Select `payments-api` and check that egress is denied.
 
 .Verify: Risk is measurably lower

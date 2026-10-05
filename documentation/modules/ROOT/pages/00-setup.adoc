@@ -315,7 +315,7 @@ export ACS_CENTRAL_ROUTE=$(oc get route central -n stackrox --context hub -o jso
 echo "ACS Console: https://${ACS_CENTRAL_ROUTE}"
 ----
 
-Log in at that URL with username `admin` and the password from above. Then generate an API token under Platform Configuration > Integrations > Authentication Tokens > API Token, and export it:
+Log in at that URL with username `admin` and the password from above. Then generate an API token under Platform Configuration > Integrations > Authentication > API Token, and export it:
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]

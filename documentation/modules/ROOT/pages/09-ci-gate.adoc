@@ -285,4 +285,4 @@ rm -rf rhacs-reports/
 unset ROX_CI_TOKEN
 ----
 
-Then revoke the `ci-gate` API token in *Platform Configuration > Integrations > Authentication Tokens > API Token*. Select `ci-gate` and revoke it. A re-run creates a new token, so the old one should not stay valid.
+Then revoke the `ci-gate` API token in *Platform Configuration > Integrations > Authentication > API Token*. Select `ci-gate` and revoke it. A re-run creates a new token, so the old one should not stay valid.
