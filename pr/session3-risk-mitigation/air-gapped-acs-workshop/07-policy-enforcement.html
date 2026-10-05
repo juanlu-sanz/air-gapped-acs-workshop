@@ -502,6 +502,12 @@ oc --context secured get deploy -n acs-workshop</code></pre>
 <div class="paragraph">
 <p>The namespace, RBAC, Services, and Route are reported as <code>unchanged</code>. Only the vulnerable pod specs are rejected. Each rejected attempt also shows up in <strong>Violations</strong>, marked as enforced.</p>
 </div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/07-violations.png" alt="Violations view showing policy violations including Log4Shell Exec into Pod and Privileged Container for acs-workshop deployments">
+</div>
+<div class="title">Figure 1. Violations view — deploy-time and runtime violations for the acs-workshop workloads</div>
+</div>
 <details>
 <summary class="title">Verify: Only payments-api is running</summary>
 <div class="content">
