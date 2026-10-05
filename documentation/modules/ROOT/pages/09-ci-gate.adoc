@@ -1,0 +1,288 @@
+= Step 9 - Shift Left: A CI-agnostic roxctl security gate
+include::_attributes.adoc[]
+
+Steps 7 and 8 stop and fix risk at the cluster. This step moves the same checks earlier, into whatever CI/CD system the team already uses. RHACS exposes build-time and deploy-time policy evaluation through the `roxctl` CLI, and its exit code works as a pass/fail gate. The integration is a few shell lines with a tool-neutral contract: environment variables in, exit code and report files out. Any CI/CD tool, or a developer laptop, can run it unchanged. The policies are the ones defined as code in xref:07-policy-enforcement.adoc[Step 7], so the cluster and the pipeline enforce one rule set: an image the admission controller would reject never gets built and promoted.
+
+[cols="3,3,3",options="header"]
+|===
+| Command | Evaluates | Fails the job when
+
+| `roxctl image scan`
+| CVEs in the image (report)
+| Never, in this gate. Use `--fail` if you want it to.
+
+| `roxctl image sbom`
+| SPDX SBOM of the image (artifact)
+| Never
+
+| `roxctl image check`
+| Policies with a BUILD lifecycle stage
+| A policy with fail build enforcement is violated
+
+| `roxctl deployment check`
+| Policies with a DEPLOY lifecycle stage against your manifests
+| A policy with deploy enforcement is violated
+|===
+
+== Prerequisites
+
+* xref:07-policy-enforcement.adoc[Step 7] completed. The workshop policies exist with `FAIL_BUILD_ENFORCEMENT`.
+* The CI runner (or your workstation) can reach the Central Route over HTTPS (port 443)
+* `bash` and `curl` on the runner image (for example `registry.access.redhat.com/ubi9/ubi`)
+* Central can pull the image to scan. For private registries, add an image registry integration in *Platform Configuration > Integrations*.
+
+== Steps to apply
+
+[#ci-token]
+=== 1. Create a CI token with least-privilege
+
+*What:* Create an API token with the built-in Continuous Integration role.
+
+*Why:* The CI gate should not use an Admin token. The Continuous Integration role has the minimum permissions needed for `roxctl image check`, `image scan`, `image sbom`, and `deployment check`.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+export ROX_CI_TOKEN="$(curl -sk \
+  -u "admin:$(oc --context hub get secret central-htpasswd -n stackrox \
+    -o go-template='{{index .data "password" | base64decode}}')" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/apitokens/generate" \
+  -d '{"name":"ci-gate","roles":["Continuous Integration"]}' | jq -r .token)"
+echo "${ROX_CI_TOKEN}"
+----
+
+In a real pipeline, store the token as a masked, protected CI secret called `ROX_API_TOKEN`, together with `ROX_ENDPOINT` (the Central Route with `:443`).
+
+.Verify: Token is valid
+[%collapsible]
+====
+The output should be a non-empty JWT token. If it prints `null` or empty, check that the admin password was retrieved correctly.
+====
+
+'''
+
+[#gate-commands]
+=== 2. The gate as plain roxctl lines
+
+*What:* Understand the four commands that make up the CI gate.
+
+*Why:* These are the commands to paste into any CI tool. The `rox-ci-gate.sh` script in this directory wraps them with error handling and report output.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+# report: CVE list and SBOM (artifacts, never fail)
+roxctl image scan --insecure-skip-tls-verify \
+  --image "$IMAGE" --output csv > image-scan.csv
+roxctl image sbom --insecure-skip-tls-verify \
+  --image "$IMAGE" > sbom.spdx.json
+
+# gate 1: build-time policies (non-zero exit = job fails)
+roxctl image check --insecure-skip-tls-verify \
+  --image "$IMAGE" --output junit > image-check.junit.xml
+
+# gate 2: deploy-time policies against the manifests
+roxctl deployment check --insecure-skip-tls-verify \
+  --cluster "$ROX_CLUSTER" -f k8s/deployment.yaml \
+  --output junit > deployment-check.junit.xml
+----
+
+`--output` accepts `table`, `csv`, `json`, `junit`, and `sarif` for `image check` and `deployment check`. Pick the format your tooling reads: `junit` for CI test-report views, `sarif` for code-scanning and security dashboards, `json` for custom processing.
+
+'''
+
+[#test-vulnerable]
+=== 3. Run the gate against the vulnerable image (expected: FAIL)
+
+*What:* Simulate a CI job from your workstation using the vulnerable Log4Shell image.
+
+*Why:* The policies from Step 7 should fail the build for the vulnerable image, demonstrating that the CI gate catches what the admission controller would block.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+cd 09-ci-gate
+ROX_API_TOKEN="${ROX_CI_TOKEN}" ROX_TLS_FLAG=--insecure-skip-tls-verify \
+ROX_ENDPOINT="${ACS_CENTRAL_ROUTE}" \
+IMAGE=ghcr.io/christophetd/log4shell-vulnerable-app:latest \
+MANIFESTS="../04-vulnerable-workloads/04-log4shell-app.yaml" \
+ROX_CLUSTER=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/clusters" | jq -r '.clusters[0].name') \
+  ./rox-ci-gate.sh ; echo "exit code: $?"
+----
+
+.Verify: Gate exits with non-zero code
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+...
+| Workshop - Log4Shell CVE-2021-44228          | CRITICAL |      X       | Image contains log4j-core |
+| Workshop - Fixable CVEs of severity          | HIGH     |      X       | Image contains a fixable  |
+|   Important or higher                        |          |              | vulnerability ...         |
+...
+RHACS gate: FAILED. Enforced policy violations found (see reports in rhacs-reports/).
+exit code: 1
+----
+
+Only policies with fail build enforcement break the build. The inform-only untrusted registries policy is reported but does not fail the job.
+====
+
+'''
+
+[#test-remediated]
+=== 4. Run the gate against the remediated image (expected: PASS)
+
+*What:* Run the same gate against the hardened NGINX image and manifest from xref:08-remediation.adoc[Step 8].
+
+*Why:* The remediated image should pass all policy checks, demonstrating the full lifecycle: vulnerable image fails, fixed image passes.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+ROX_API_TOKEN="${ROX_CI_TOKEN}" ROX_TLS_FLAG=--insecure-skip-tls-verify \
+ROX_ENDPOINT="${ACS_CENTRAL_ROUTE}" \
+IMAGE=registry.access.redhat.com/hi/nginx:1 \
+MANIFESTS="../08-remediation/02-legacy-frontend-hardened.yaml" \
+ROX_CLUSTER=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/clusters" | jq -r '.clusters[0].name') \
+  ./rox-ci-gate.sh ; echo "exit code: $?"
+----
+
+.Verify: Gate exits with code 0
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+...
+RHACS gate: PASSED
+exit code: 0
+----
+====
+
+'''
+
+[#review-reports]
+=== 5. Review the CI reports
+
+*What:* Inspect the report artifacts generated by the gate.
+
+*Why:* These are the files a CI system archives and shows next to the change under review.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+ls -la rhacs-reports/
+----
+
+The `rhacs-reports/` directory contains:
+
+* `image-scan.csv` - full CVE list for archival
+* `sbom.spdx.json` - SPDX SBOM for supply chain compliance
+* `image-check.junit.xml` - build-time policy results in JUnit format
+* `deployment-check.junit.xml` - deploy-time policy results in JUnit format
+
+'''
+
+[#wire-ci-tool]
+=== 6. Wire it into your CI/CD tool
+
+*What:* Understand the contract for integrating the gate into any CI system.
+
+*Why:* The script is the whole integration. Every CI tool needs the same four things.
+
+[cols="2,4",options="header"]
+|===
+| Contract | What to configure in your tool
+
+| Where
+| One job or step after image build/push and before deploy or promote. The runner image needs `bash` and `curl` (for example `registry.access.redhat.com/ubi9/ubi`).
+
+| Inputs
+| Secrets `ROX_ENDPOINT` and `ROX_API_TOKEN` from the tool's secret store (masked). Variables `IMAGE` (preferably the digest produced by the build), and optionally `MANIFESTS` and `ROX_CLUSTER`.
+
+| Run
+| `./rox-ci-gate.sh`, copied into the application repo or a shared scripts repo
+
+| Outputs
+| Exit code: non-zero means stop the pipeline. Artifacts: publish `rhacs-reports/` and feed the `*.junit.xml` files to the tool's test-report view.
+|===
+
+Keep the job blocking. Do not mark it "allowed to fail". To make an exception, change the policy (scope, exclusion, or enforcement) in Git as in xref:07-policy-enforcement.adoc[Step 7], rather than bypassing the gate in one pipeline.
+
+NOTE: `roxctl image check` evaluates the image with no deployment context. The deployment exclusion from Step 7 for `payments-api` therefore does not apply, and the Log4Shell image fails the build even though the running deployment is accepted. This is intended: the risk acceptance covers the existing workload, not new builds.
+
+'''
+
+== What this solves (compared to previous steps)
+
+[cols="2,3",options="header"]
+|===
+| Problem from previous steps | How this step solves it
+
+| Developers only find out about policy violations at deploy time
+| The CI gate catches violations at build time, before the image reaches the cluster
+
+| Policy evaluation requires access to the ACS portal
+| roxctl runs in any CI/CD tool, developer laptop, or script with only bash and curl
+
+| Build-time and deploy-time policies are enforced by different systems
+| One rule set (SecurityPolicy CRs from Step 7) drives both the admission controller and the CI gate
+|===
+
+== What this does NOT solve (yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining problem | Addressed in
+
+| No custom dashboards for monitoring vulnerability and compliance trends
+| A future observability session will cover Grafana dashboards with Prometheus metrics and ACS API data
+
+| ACS policies and exceptions are configured manually - not automated across clusters
+| A future integration session will cover ACM-based automation for scaling ACS across multiple clusters
+|===
+
+== Official documentation
+
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/integrating/integrate-with-ci-systems[Integrating with CI systems]
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/roxctl_cli/checking-policy-compliance-1[Checking policy compliance with roxctl]
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/roxctl_cli/image-scanning-by-using-the-roxctl-cli-1[Image scanning with the roxctl CLI]
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/roxctl_cli/roxctl-cli-command-reference[roxctl CLI command reference]
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/configuring/configure-api-token[Configuring API tokens]
+
+== Alternatives considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| `roxctl` in a shell step (this step)
+| Works with any CI tool. Version-matched `roxctl` downloaded from Central. Exit code is the gate.
+
+| `rhacs-roxctl-rhel9` container image
+| `registry.redhat.io/advanced-cluster-security/rhacs-roxctl-rhel9:{acs-version}` has `roxctl` as its entrypoint. Good for CI tools that run a container per step. Needs `registry.redhat.io` credentials.
+
+| CI-tool-specific plugins or tasks
+| Tighter UI integration in one tool, but tied to that tool and its release cycle. They use the same RHACS API underneath.
+
+| Admission control only (Step 7)
+| Still needed as the last line of defense, but developers only find out at deploy time.
+|===
+
+'''
+
+== Reset
+
+This step created no cluster resources. Remove the local artifacts and the CI token.
+
+[.console-input]
+[source,bash]
+----
+rm -rf rhacs-reports/
+unset ROX_CI_TOKEN
+----
+
+Then revoke the `ci-gate` API token in *Platform Configuration > Integrations > Authentication Tokens > API Token*. Select `ci-gate` and revoke it. A re-run creates a new token, so the old one should not stay valid.

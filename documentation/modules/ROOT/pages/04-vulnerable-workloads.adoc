@@ -1,0 +1,222 @@
+= Step 4 - Deploy Vulnerable Workloads: Intentionally insecure application for security exercises
+include::_attributes.adoc[]
+
+This step deploys a small, deliberately insecure application that gives RHACS real findings to work with. It has three components, each showing a different mix of vulnerability (CVEs in the image) and configuration risk (privileges, exposure, secrets). Telling these two apart is the core idea of risk-based vulnerability management.
+
+[cols="2,2,2,3",options="header"]
+|===
+| Deployment | Image | Vulnerability profile | Configuration risk
+
+| `legacy-frontend`
+| `docker.io/library/nginx:1.22.0-alpine`
+| Outdated Alpine 3.16.2 base (2022), many fixable Important/Critical CVEs
+| Root user (anyuid SCC), plaintext secret in an env var, no resource limits, internet-facing Route
+
+| `payments-api`
+| `ghcr.io/christophetd/log4shell-vulnerable-app`
+| CVE-2021-44228 (Log4Shell) and other Java CVEs
+| Default restricted SCC, internal only
+
+| `node-agent`
+| `registry.access.redhat.com/ubi8/ubi:8.4`
+| Outdated 2021 UBI 8.4 base, many fixable RHSA errata
+| Privileged, host PID and network, host `/` mounted, privileged SCC
+|===
+
+WARNING: These workloads are exploitable on purpose. Deploy them only on a disposable lab cluster and never expose them to untrusted networks.
+
+== Prerequisites
+
+* ACS Central running on the hub cluster from xref:00-setup.adoc[Cluster Setup]
+* At least one secured cluster registered and healthy
+* `ROX_API_TOKEN` and `ACS_CENTRAL_ROUTE` exported as described in xref:00-setup.adoc#export-variables[Export Workshop Variables]
+* The secured cluster can pull from `docker.io`, `ghcr.io`, and `registry.access.redhat.com`
+
+== Why these workloads are risky
+
+Old base images build up CVEs over time. Nothing in the NGINX 1.22 or UBI 8.4 image changed, yet new CVEs keep being published against the packages inside them. Scanning only at build time misses this. RHACS keeps re-matching running images against current vulnerability data.
+
+Severity alone does not show risk. A critical CVE in a privileged, internet-exposed pod is far more urgent than the same CVE in an isolated batch job. Step 6 shows how RHACS combines both into a risk score.
+
+== Steps to apply
+
+[#deploy-workloads]
+=== 1. Deploy the vulnerable application
+
+icon:clock[] ~1 minute (image pull + deployment rollout)
+
+*What:* Deploy the namespace, RBAC, and three intentionally vulnerable workloads on the secured cluster.
+
+*Why:* The vulnerability management, risk analysis, policy enforcement, and remediation exercises in the following steps need deployments with actual vulnerability data and misconfigurations to work with.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc apply -f 04-vulnerable-workloads/ --context secured
+----
+
+'''
+
+[#wait-for-pods]
+=== 2. Wait for all pods to be running
+
+*What:* Verify that all three deployments are available.
+
+*Why:* The pods must be running before RHACS can scan the images and report findings.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc get pods -n acs-workshop --context secured -w
+----
+
+.Verify: All pods are running
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+NAME                               READY   STATUS    RESTARTS   AGE
+legacy-frontend-xxxxxxxxxx-xxxxx   1/1     Running   0          60s
+node-agent-xxxxxxxxxx-xxxxx        1/1     Running   0          60s
+payments-api-xxxxxxxxxx-xxxxx      1/1     Running   0          60s
+----
+====
+
+'''
+
+[#check-frontend-route]
+=== 3. Check the frontend Route
+
+*What:* Verify that the frontend is reachable from the internet through the OpenShift Route.
+
+*Why:* Internet exposure is one of the risk factors RHACS uses to rank deployments. The Route makes `legacy-frontend` the most exposed workload in the namespace.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -skI "https://$(oc get route legacy-frontend -n acs-workshop --context secured \
+  -o jsonpath='{.spec.host}')" | head -3
+----
+
+.Verify: Frontend responds with HTTP 200
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+HTTP/1.1 200 OK
+server: nginx/1.22.0
+...
+----
+====
+
+'''
+
+[#verify-acs-scan]
+=== 4. Verify that RHACS has scanned the images
+
+icon:clock[] ~2 minutes (Scanner V4 indexes images after Sensor reports the deployments)
+
+*What:* Confirm that RHACS has discovered the deployments and scanned their images.
+
+*Why:* ACS needs time to index the images after the deployments appear. The vulnerability data will be empty until the scan completes.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/deployments?query=Namespace:acs-workshop" | \
+  jq '.deployments[] | {name: .name, namespace: .namespace}'
+----
+
+.Verify: Three deployments are visible in ACS
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+{
+  "name": "legacy-frontend",
+  "namespace": "acs-workshop"
+}
+{
+  "name": "payments-api",
+  "namespace": "acs-workshop"
+}
+{
+  "name": "node-agent",
+  "namespace": "acs-workshop"
+}
+----
+====
+
+NOTE: If the vulnerability data is empty or shows zero CVEs, wait another minute and refresh. Scanner V4 needs time to index the images against its vulnerability database.
+
+'''
+
+== What this solves (compared to previous steps)
+
+[cols="2,3",options="header"]
+|===
+| Problem from previous steps | How this step solves it
+
+| Steps 1-3 worked with whatever images were already on the cluster
+| Deploys a controlled set of workloads with known CVEs, misconfigurations, and varying risk profiles for consistent exercises
+
+| No realistic scenario combining vulnerability and configuration risk
+| Three workloads each show a different mix: internet-facing with critical CVEs, RCE with no patch, privileged with an old base image
+|===
+
+== What this does NOT solve (yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining problem | Addressed in
+
+| The workloads are running but nothing stops more vulnerable images from being deployed
+| xref:07-policy-enforcement.adoc[Step 7: Policy Enforcement] adds guardrails as code
+
+| The CVEs are there but there is no structured way to triage, defer, or report on them
+| xref:05-vulnerability-management.adoc[Step 5: Vulnerability Management] covers the full triage workflow
+|===
+
+== Official documentation
+
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/operating/examine-images-for-vulnerabilities[Examining images for vulnerabilities in RHACS 4.11]
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/operating/using-policies-to-provide-security[Default security policies in RHACS 4.11]
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.15/html/authentication_and_authorization/managing-pod-security-policies[Managing Security Context Constraints]
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.15/html/authentication_and_authorization/understanding-and-managing-pod-security-admission[Understanding pod security admission]
+
+== Alternatives considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| Intentionally vulnerable workloads (this workshop)
+| Controlled, repeatable scenario. Each workload represents a different risk archetype. Easy to deploy and clean up.
+
+| Scanning whatever is already running on the cluster
+| Realistic but unpredictable. CVE findings depend on what is deployed. Hard to write consistent exercises around.
+
+| Synthetic test images with injected vulnerabilities
+| More control over exact CVEs but less realistic. Does not show real-world base image issues or configuration risks.
+|===
+
+'''
+
+== Reset
+
+Remove the vulnerable workloads and the namespace.
+
+WARNING: If you have already completed xref:07-policy-enforcement.adoc[Step 7: Policy Enforcement], its policies block re-deploying these vulnerable workloads. Run the clean-up of the later steps first, in reverse order (09 to 05).
+
+[.console-input]
+[source,bash]
+----
+oc delete project acs-workshop --context secured --ignore-not-found
+oc wait --for=delete namespace/acs-workshop --context secured --timeout=5m
+----
+
+The namespace deletion also removes the ServiceAccounts, the `anyuid` and `privileged` RoleBindings, the Services, and the Route. RHACS removes the deployments from Risk and resolves their deploy-time violations automatically.

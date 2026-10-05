@@ -1,0 +1,297 @@
+= Step 8 - Remediation: Fix vulnerabilities and mitigate risk
+include::_attributes.adoc[]
+
+This step carries out the plan from xref:06-risk-analysis.adoc[Step 6] and shows the difference between remediation (removing the vulnerability) and mitigation (reducing its exploitability when it cannot be removed yet).
+
+[cols="2,2,3",options="header"]
+|===
+| Deployment | Strategy | How
+
+| `legacy-frontend`
+| *Remediate*
+| Rebase from upstream `nginx:1.22.0-alpine` to the Red Hat hardened image `hi/nginx` (minimal, distroless, non-root). Run under `restricted-v2`. Move the plaintext secret into a `Secret`.
+
+| `node-agent`
+| *Remediate*
+| Current `ubi9/ubi-minimal` base image. Remove privileged mode, host namespaces, and the host mount. Remove the SCC grant.
+
+| `payments-api`
+| *Mitigate* (compensating control)
+| No patched build exists. Apply a default-deny NetworkPolicy that blocks all egress, including DNS, so the Log4Shell JNDI callback cannot connect. Allow ingress only from the frontend. The CVE stays formally deferred (Step 5) and excluded from enforcement (Step 7) until a fixed image is available.
+|===
+
+The RHACS admission controller from xref:07-policy-enforcement.adoc[Step 7] checks each fix as it is applied: a fix passes only if it really meets the policies. The Risk view, Violations, and the Network Graph then confirm that the risk went down.
+
+== Prerequisites
+
+* xref:07-policy-enforcement.adoc[Step 7] completed. `legacy-frontend` and `node-agent` do not exist (their deployment was blocked), and `payments-api` runs under its exclusion.
+* `cluster-admin` on the secured cluster (to remove the SCC RoleBindings)
+* OVN-Kubernetes network plugin (the default on OpenShift {ocp-version}) for NetworkPolicy support
+
+== Steps to apply
+
+[#pre-check]
+=== 1. Pre-check hardened manifests against RHACS
+
+*What:* Run `roxctl deployment check` against the hardened manifests before applying them.
+
+*Why:* This catches policy violations before the admission controller does. It also pre-caches the image scan in Central, so a scan timeout cannot let an unevaluated image through.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+roxctl deployment check --insecure-skip-tls-verify \
+  --cluster $(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+    "https://${ACS_CENTRAL_ROUTE}/v1/clusters" | jq -r '.clusters[0].name') \
+  -f 08-remediation/02-legacy-frontend-hardened.yaml \
+  -f 08-remediation/03-node-agent-hardened.yaml --output table
+----
+
+None of the workshop policies with enforcement (fixable Important CVEs, privileged) should show *BREAKS DEPLOY*.
+
+.Verify: No enforced policy violations
+[%collapsible]
+====
+The output should show the policies but none with a *BREAKS DEPLOY* flag for the hardened images.
+====
+
+'''
+
+[#remove-privileges]
+=== 2. Remove the excess privileges
+
+*What:* Delete the RoleBindings that granted the `anyuid` and `privileged` SCCs.
+
+*Why:* The hardened deployments run under the default `restricted-v2` SCC. The old RoleBindings must be removed imperatively because a declarative `apply` does not delete objects.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc --context secured delete rolebinding legacy-frontend-anyuid node-agent-privileged \
+  -n acs-workshop
+----
+
+.Verify: RoleBindings are gone
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc --context secured get rolebinding -n acs-workshop
+----
+====
+
+'''
+
+[#create-secret]
+=== 3. Create the database secret
+
+*What:* Put the database password into a `Secret` instead of a plaintext environment variable.
+
+*Why:* The hardened frontend reads `DB_PASSWORD` from a `Secret`. The password is generated at apply time and never stored in Git.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc --context secured create secret generic legacy-frontend-db -n acs-workshop \
+  --from-literal=DB_PASSWORD="$(openssl rand -base64 18)"
+----
+
+.Verify: Secret exists
+[%collapsible]
+====
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc --context secured get secret legacy-frontend-db -n acs-workshop
+----
+====
+
+'''
+
+[#apply-remediation]
+=== 4. Apply the remediation
+
+icon:clock[] ~1 minute (admission check + image pull + pod rollout)
+
+*What:* Apply the hardened namespace labels, hardened deployments, and network policies.
+
+*Why:* The same admission controller that blocked the originals in Step 7 now admits both deployments, because the hardened pod specs no longer violate the enforced policies.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc --context secured apply -f 08-remediation/01-namespace-restricted.yaml
+oc --context secured apply -f 08-remediation/02-legacy-frontend-hardened.yaml \
+  -f 08-remediation/03-node-agent-hardened.yaml
+oc --context secured apply -f 08-remediation/04-network-policies.yaml
+oc --context secured get pods -n acs-workshop -w
+----
+
+.Verify: All three pods are running
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+NAME                               READY   STATUS    RESTARTS   AGE
+legacy-frontend-yyyyyyyyyy-yyyyy   1/1     Running   0          45s
+node-agent-yyyyyyyyyy-yyyyy        1/1     Running   0          45s
+payments-api-xxxxxxxxxx-xxxxx      1/1     Running   0          70m
+----
+====
+
+'''
+
+[#verify-fixes]
+=== 5. Verify the fixes and the compensating control
+
+*What:* Confirm the application works and the Log4Shell compensating control is effective.
+
+*Why:* Remediation is not complete until you verify that the fix works and the remaining risk is reduced.
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+# Frontend responds through the Route (served by the Red Hat hardened NGINX image)
+curl -skI "https://$(oc --context secured get route legacy-frontend -n acs-workshop \
+  -o jsonpath='{.spec.host}')" | head -3
+
+# payments-api can no longer resolve names or open outbound connections
+# (Log4Shell callback path is blocked)
+oc --context secured exec -n acs-workshop deploy/payments-api -- \
+  sh -c 'wget -T 3 -qO- http://example.com >/dev/null && echo OPEN || echo BLOCKED'
+----
+
+.Verify: Frontend returns HTTP 200 and payments-api egress is blocked
+[%collapsible]
+====
+[.console-output]
+[source,bash]
+----
+HTTP/1.1 200 OK
+server: nginx/1.30.x
+...
+----
+
+[.console-output]
+[source,bash]
+----
+wget: bad address 'example.com'
+BLOCKED
+----
+====
+
+'''
+
+[#confirm-risk-reduction]
+=== 6. Confirm risk reduction in RHACS
+
+icon:clock[] ~2 minutes (RHACS re-evaluates after the changes)
+
+*What:* Check that the risk ranking, violations, and vulnerability counts reflect the remediation.
+
+*Why:* The whole point of the exercise is to reduce risk. RHACS should confirm the improvement.
+
+Allow 1-2 minutes for re-evaluation, then check:
+
+* *Risk* (namespace `acs-workshop`): `node-agent` and `legacy-frontend` fall down the ranking. Their risk indicators no longer show privileged mode, root, external secrets in env vars, or old images. `legacy-frontend` now runs a distroless image with no shell or package manager: the Components Useful for Attackers indicator disappears.
+* *Violations*: the deploy-time violations for the old pod specs are resolved. Only `payments-api` still shows Log4Shell and untrusted registry, both inform-only.
+* *Vulnerability Management > Workload CVEs* (namespace `acs-workshop`): the fixable Important/Critical CVE count drops sharply. What remains comes mostly from `payments-api`, the accepted risk.
+* *Network > Network Graph*: `acs-workshop` now shows NetworkPolicies. Select `payments-api` and check that egress is denied.
+
+.Verify: Risk is measurably lower
+[%collapsible]
+====
+The risk ranking for `legacy-frontend` and `node-agent` should be significantly lower than before remediation. The `oc exec` attack path from Step 6 is gone for `legacy-frontend` (distroless image has no shell).
+
+Try:
+
+[.console-input]
+[source,bash,subs="+macros,+attributes"]
+----
+oc --context secured exec -n acs-workshop deploy/legacy-frontend -- sh
+----
+
+This should fail because the distroless image has no shell binary.
+====
+
+NOTE: If the hardened image is blocked by the admission controller with "Fixable CVEs of severity Important or higher", a new erratum was published between two image rebuilds. Red Hat hardened images (`hi/...`) are rebuilt continuously and contain very few packages, so this is rare. Wait for the next rebuild and apply again.
+
+'''
+
+== What this solves (compared to previous steps)
+
+[cols="2,3",options="header"]
+|===
+| Problem from previous steps | How this step solves it
+
+| Policies blocked the vulnerable workloads but the fixes were not applied
+| Hardened images, removed privileges, and network segmentation bring the workloads into compliance
+
+| Log4Shell has no patch but the pod could still make outbound callbacks
+| Default-deny NetworkPolicy blocks all egress from payments-api, cutting off the exploit's callback path
+
+| Risk indicators showed problems but the risk was not reduced
+| RHACS confirms the improvement: lower risk scores, resolved violations, fewer CVEs
+|===
+
+== What this does NOT solve (yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining problem | Addressed in
+
+| The fixes are applied manually - the CI pipeline does not enforce policies
+| xref:09-ci-gate.adoc[Step 9: CI Gate] moves the same checks into the build pipeline
+
+| No custom dashboards for monitoring vulnerability and compliance trends
+| A future observability session will cover Grafana dashboards with Prometheus metrics and ACS API data
+|===
+
+== Official documentation
+
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/operating/evaluate-security-risks[Evaluating security risks (Risk view)]
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/operating/manage-network-policies[Managing network policies in RHACS (Network Graph, baselines)]
+* link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/operating/managing-vulnerabilities[Managing vulnerabilities: exception workflow]
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.15/html/network_security/network-policy[Network policy (OpenShift)]
+* link:https://docs.redhat.com/en/documentation/openshift_container_platform/4.15/html/authentication_and_authorization/managing-pod-security-policies[Managing Security Context Constraints]
+
+== Alternatives considered
+
+[cols="2,4",options="header"]
+|===
+| Approach | Notes
+
+| Hand-written NetworkPolicies (this step)
+| Exact and easy to review. Needs knowledge of the application's flows.
+
+| `roxctl netpol generate` from the manifests
+| RHACS generates least-privilege policies from the Deployment and Service YAML at build time. Useful for larger applications. Review the output before applying.
+
+| `AdminNetworkPolicy` / `BaselineAdminNetworkPolicy`
+| Cluster-scoped guardrails that tenants cannot override. Useful for platform-wide egress rules.
+
+| `EgressFirewall` (OVN-Kubernetes)
+| Namespace egress control by CIDR or DNS name. Useful when some outbound access must stay open.
+
+| Virtual patching with WAF or Service Mesh rules
+| Filters `${jndi:` payloads at the edge. Adds defense in depth but can be bypassed by obfuscation, so it should not be the only control.
+|===
+
+'''
+
+== Reset
+
+This returns the application to its end-of-step-7 state.
+
+[.console-input]
+[source,bash]
+----
+# 1. Remove network policies and secret
+oc --context secured delete -f 08-remediation/04-network-policies.yaml --ignore-not-found
+oc --context secured delete secret legacy-frontend-db -n acs-workshop --ignore-not-found
+
+# 2. Follow the step 7 Reset to remove policies and restore vulnerable workloads
+# See: Step 7 - Policy Enforcement > Reset
+----
