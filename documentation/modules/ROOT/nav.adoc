@@ -1,5 +1,5 @@
 * xref:index.adoc[Overview]
-* Session 1: Reporting and Compliance
+* Session 2: Reporting and Compliance
 ** xref:00-setup.adoc[Cluster Setup]
 *** xref:00-setup.adoc#prerequisites[Prerequisites]
 *** xref:00-setup.adoc#export-variables[Export Workshop Variables]
@@ -25,7 +25,7 @@
 *** xref:03-delegated-scanning.adoc#push-test-image[Push a Test Image]
 *** xref:03-delegated-scanning.adoc#verify-scan[Verify Scan Results]
 *** xref:03-delegated-scanning.adoc#offline-vuln-db[Update Vulnerability Database Offline (Optional)]
-* Session 2: Vulnerability Management
+* Session 3: Risk Mitigation and Vulnerability Management
 ** xref:04-vulnerable-workloads.adoc[Step 4: Deploy Vulnerable Workloads]
 *** xref:04-vulnerable-workloads.adoc#deploy-workloads[Deploy the Application]
 *** xref:04-vulnerable-workloads.adoc#wait-for-pods[Wait for Pods]
@@ -43,7 +43,6 @@
 *** xref:06-risk-analysis.adoc#runtime-signals[Runtime Signals]
 *** xref:06-risk-analysis.adoc#network-graph[Network Exposure]
 *** xref:06-risk-analysis.adoc#remediation-plan[Remediation Plan]
-* Session 3: Policy and Remediation
 ** xref:07-policy-enforcement.adoc[Step 7: Policy Enforcement]
 *** xref:07-policy-enforcement.adoc#remove-workloads[Remove Running Workloads]
 *** xref:07-policy-enforcement.adoc#apply-policies[Apply SecurityPolicy CRs]
