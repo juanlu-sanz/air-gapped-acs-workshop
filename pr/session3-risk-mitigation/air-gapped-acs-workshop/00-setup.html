@@ -468,6 +468,9 @@ Never commit <code>myenv.sh</code> with real credentials. The <code>.gitignore</
 <div class="sect2">
 <h3 id="_4_install_the_rhacs_operator"><a class="anchor" href="#_4_install_the_rhacs_operator"></a>4. Install the RHACS Operator</h3>
 <div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~30 seconds (subscription + CSV readiness)</p>
+</div>
+<div class="paragraph">
 <p><strong>What:</strong> Install the RHACS Operator from OperatorHub on the hub cluster.</p>
 </div>
 <div class="paragraph">
@@ -507,6 +510,9 @@ rhacs-operator.v4.11.x     RHACS Operator                               Succeede
 </div>
 <div class="sect2">
 <h3 id="_5_create_the_central_instance"><a class="anchor" href="#_5_create_the_central_instance"></a>5. Create the Central instance</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~1 minute (CR accepted in ~10s, pods ready in ~45s)</p>
+</div>
 <div class="paragraph">
 <p><strong>What:</strong> Deploy the ACS Central custom resource in the <code>stackrox</code> namespace.</p>
 </div>
@@ -552,6 +558,9 @@ scanner-v4-db-xxxxxxx-xxxxx   1/1     Running   0          2m</code></pre>
 <div class="sect2">
 <h3 id="_6_retrieve_the_admin_password_and_central_route"><a class="anchor" href="#_6_retrieve_the_admin_password_and_central_route"></a>6. Retrieve the admin password and Central route</h3>
 <div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~2-3 minutes (Central API may take up to 3 minutes to become responsive after pods are ready)</p>
+</div>
+<div class="paragraph">
 <p><strong>What:</strong> Get the initial admin password and the route to access the ACS console.</p>
 </div>
 <div class="paragraph">
@@ -586,6 +595,9 @@ echo "ACS Console: <a href="https://${ACS_CENTRAL_ROUTE}"" class="bare">https://
 <div class="sectionbody">
 <div class="sect2">
 <h3 id="_7_install_the_rhacs_operator_on_the_secured_cluster"><a class="anchor" href="#_7_install_the_rhacs_operator_on_the_secured_cluster"></a>7. Install the RHACS Operator on the secured cluster</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~30 seconds</p>
+</div>
 <div class="paragraph">
 <p><strong>What:</strong> Install the same RHACS Operator on the secured cluster.</p>
 </div>
@@ -652,6 +664,9 @@ oc apply -f secured-cluster-init-bundle.yaml -n stackrox --context secured</code
 <div class="sect2">
 <h3 id="_9_deploy_the_securedcluster_cr"><a class="anchor" href="#_9_deploy_the_securedcluster_cr"></a>9. Deploy the SecuredCluster CR</h3>
 <div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~2 minutes (CR accepted in ~7s, all pods ready in ~2 minutes)</p>
+</div>
+<div class="paragraph">
 <p><strong>What:</strong> Create the SecuredCluster custom resource on the secured cluster, with Scanner-slim enabled.</p>
 </div>
 <div class="paragraph">
@@ -714,6 +729,9 @@ scanner-v4-db-xxxxxxx-xxxxx           1/1     Running   0          1m</code></pr
 <div class="sectionbody">
 <div class="sect2">
 <h3 id="_10_install_the_compliance_operator_on_both_clusters"><a class="anchor" href="#_10_install_the_compliance_operator_on_both_clusters"></a>10. Install the Compliance Operator on both clusters</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~45 seconds (subscription + profile parsing)</p>
+</div>
 <div class="paragraph">
 <p><strong>What:</strong> Subscribe to the Compliance Operator on both the hub and the secured cluster.</p>
 </div>

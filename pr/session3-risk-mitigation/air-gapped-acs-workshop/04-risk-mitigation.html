@@ -242,6 +242,9 @@
 <div class="sect2">
 <h3 id="deploy-vulnerable"><a class="anchor" href="#deploy-vulnerable"></a>1. Deploy workloads with known vulnerabilities</h3>
 <div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~20 seconds (image pull + deployment rollout)</p>
+</div>
+<div class="paragraph">
 <p><strong>What:</strong> Deploy a set of intentionally outdated images so there are real CVEs to triage.</p>
 </div>
 <div class="paragraph">
@@ -513,6 +516,18 @@ When the ACS severity is lower than the NVD score, it means Red Hat&#8217;s anal
 <div class="paragraph">
 <p>Click Submit.</p>
 </div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Exception requests are created with <code>PENDING</code> status. In ACS, the requester cannot self-approve their own exceptions. An administrator or a different user with the <code>VulnerabilityManagementApprovals</code> permission must approve them. In a workshop setting, you can approve exceptions through the ACS UI under Vulnerability Management &gt; Exception Management.
+</td>
+</tr>
+</table>
+</div>
 <div class="paragraph">
 <p>You can also create the deferral via the API:</p>
 </div>
@@ -719,29 +734,40 @@ echo "${POLICY_JSON}" | jq '.enforcementActions = ["SCALE_TO_ZERO_ENFORCEMENT"]'
 <div class="sect3">
 <h4 id="_test_enforcement"><a class="anchor" href="#_test_enforcement"></a>Test enforcement</h4>
 <div class="paragraph">
-<p>Try deploying a new pod with a vulnerable image. The admission controller should block it:</p>
+<p>Try deploying a new pod with a vulnerable image. The enforcement action (<code>SCALE_TO_ZERO_ENFORCEMENT</code>) works on Deployments, not bare Pods. Create a Deployment instead of <code>oc run</code>:</p>
 </div>
 <div class="listingblock console-input">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc run enforce-test --image=registry.access.redhat.com/ubi8/ubi:8.6 \
-  --restart=Never -n risk-workshop --context secured \
-  -- sleep infinity</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc create deployment enforce-test \
+  --image=registry.access.redhat.com/ubi8/ubi:8.6 \
+  -n risk-workshop --context secured</code></pre>
 </div>
 </div>
 <details>
-<summary class="title">Verify: Deployment is blocked</summary>
+<summary class="title">Verify: Deployment is scaled to zero</summary>
 <div class="content">
 <div class="paragraph">
-<p>The command should return an admission error similar to:</p>
+<p>Wait a few seconds, then check if ACS scaled the deployment down:</p>
 </div>
-<div class="listingblock console-output">
+<div class="listingblock console-input">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">Error from server: admission webhook "policyeval.stackrox.io" denied the request:
-Action enforced by ACS policy "Workshop - Important Fixable CVEs"</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc get deployment enforce-test -n risk-workshop --context secured</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>If the pod was created, the admission controller may not have caught it in time. Check the Violations view in ACS - the enforcement action (scale-to-zero) should have scaled the deployment down.</p>
+<p>The replicas should be 0. Check the Violations view in ACS - the enforcement action should show "Scaled to zero replicas".</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<code>SCALE_TO_ZERO_ENFORCEMENT</code> does not block creation at admission time. It allows the Deployment to be created, then scales it to zero after ACS detects the violation. This is a softer enforcement model that avoids blocking CI/CD pipelines while still preventing vulnerable workloads from running.
+</td>
+</tr>
+</table>
 </div>
 </div>
 </details>
@@ -937,8 +963,8 @@ for REQ_ID in $(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
     "https://${ACS_CENTRAL_ROUTE}/v2/vulnerability-exceptions/requests/${REQ_ID}"
 done
 
-# Clean up the enforce-test pod if it exists
-oc delete pod enforce-test -n risk-workshop --context secured --ignore-not-found</code></pre>
+# Clean up the enforce-test deployment if it exists
+oc delete deployment enforce-test -n risk-workshop --context secured --ignore-not-found</code></pre>
 </div>
 </div>
 </div>
