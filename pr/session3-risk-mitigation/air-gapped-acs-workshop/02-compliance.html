@@ -143,25 +143,130 @@
   </li>
   <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
-    <a class="nav-link" href="04-risk-mitigation.html">Step 4: Risk Mitigation</a>
+    <a class="nav-link" href="04-vulnerable-workloads.html">Step 4: Deploy Vulnerable Workloads</a>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="04-risk-mitigation.html#deploy-vulnerable">Deploy Vulnerable Workloads</a>
+    <a class="nav-link" href="04-vulnerable-workloads.html#deploy-workloads">Deploy the Application</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="04-risk-mitigation.html#risk-view">Risk View and Priority Scoring</a>
+    <a class="nav-link" href="04-vulnerable-workloads.html#wait-for-pods">Wait for Pods</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="04-risk-mitigation.html#vex-data">Evaluate CVEs Against VEX Data</a>
+    <a class="nav-link" href="04-vulnerable-workloads.html#check-frontend-route">Check the Frontend Route</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="04-risk-mitigation.html#defer-false-positive">Defer and False Positive Workflows</a>
+    <a class="nav-link" href="04-vulnerable-workloads.html#verify-acs-scan">Verify ACS Scan</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="05-vulnerability-management.html">Step 5: Vulnerability Management</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-vulnerability-management.html#explore-portal">Explore Workload CVEs in Portal</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="04-risk-mitigation.html#policy-enforcement">Deploy-Time Policy Enforcement</a>
+    <a class="nav-link" href="05-vulnerability-management.html#roxctl-scan">Scan and Inspect from CLI</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="04-risk-mitigation.html#exceptions-at-scale">Risk Acceptance at Scale</a>
+    <a class="nav-link" href="05-vulnerability-management.html#vex-data">Evaluate CVEs Against VEX Data</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-vulnerability-management.html#security-data-api">Red Hat Security Data API</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-vulnerability-management.html#defer-false-positive">Defer and False Positive Workflows</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="05-vulnerability-management.html#schedule-report">Schedule a Vulnerability Report</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="06-risk-analysis.html">Step 6: Risk Analysis</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="06-risk-analysis.html#risk-ranking">Risk Ranking</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="06-risk-analysis.html#runtime-signals">Runtime Signals</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="06-risk-analysis.html#network-graph">Network Exposure</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="06-risk-analysis.html#remediation-plan">Remediation Plan</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="07-policy-enforcement.html">Step 7: Policy Enforcement</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="07-policy-enforcement.html#remove-workloads">Remove Running Workloads</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="07-policy-enforcement.html#apply-policies">Apply SecurityPolicy CRs</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="07-policy-enforcement.html#redeploy-workloads">Re-deploy and Observe Blocking</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="07-policy-enforcement.html#break-glass">Break-Glass Bypass</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="07-policy-enforcement.html#shift-left-preview">Shift-Left Preview with roxctl</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="08-remediation.html">Step 8: Remediation</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="08-remediation.html#pre-check">Pre-check Hardened Manifests</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="08-remediation.html#remove-privileges">Remove Excess Privileges</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="08-remediation.html#create-secret">Create Database Secret</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="08-remediation.html#apply-remediation">Apply Hardened Manifests</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="08-remediation.html#verify-fixes">Verify Fixes</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="08-remediation.html#confirm-risk-reduction">Confirm Risk Reduction</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="09-ci-gate.html">Step 9: CI Gate</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="09-ci-gate.html#ci-token">Create CI Token</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="09-ci-gate.html#gate-commands">Gate Commands</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="09-ci-gate.html#test-vulnerable">Test Vulnerable Image (FAIL)</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="09-ci-gate.html#test-remediated">Test Remediated Image (PASS)</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="09-ci-gate.html#review-reports">Review CI Reports</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="09-ci-gate.html#wire-ci-tool">Wire into CI/CD Tool</a>
   </li>
 </ul>
   </li>
