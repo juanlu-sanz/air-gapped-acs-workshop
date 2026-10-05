@@ -1,4 +1,4 @@
-= RHACS: Security Workshop - Reporting, Compliance, Vulnerability Management, and Risk Mitigation
+= RHACS: Security Lifecycle Workshop
 :page-layout: home
 :!sectids:
 include::_attributes.adoc[]
@@ -6,10 +6,10 @@ include::_attributes.adoc[]
 [.text-center.strong]
 == Security reporting, compliance posture, vulnerability management, and risk mitigation on OpenShift
 
-This workshop covers the full security lifecycle with Red Hat Advanced Cluster Security for Kubernetes (RHACS). You will create and schedule vulnerability reports, integrate the Compliance Operator with CIS and STIG benchmarks, configure delegated image scanning for air-gapped registries, deploy intentionally vulnerable workloads to triage CVEs, enforce security policies as code, remediate vulnerabilities, and integrate RHACS into CI/CD pipelines. The exercises run on two OpenShift clusters hosted on AWS: one hub cluster running ACS Central, and one secured cluster simulating an air-gapped environment.
+This workshop covers the full security lifecycle with Red Hat Advanced Cluster Security for Kubernetes (RHACS). You will create and schedule vulnerability reports, integrate the Compliance Operator with CIS and STIG benchmarks, configure delegated image scanning for registries that Central cannot reach, deploy intentionally vulnerable workloads to triage CVEs, enforce security policies as code, remediate vulnerabilities, and integrate RHACS into CI/CD pipelines. The exercises run on two OpenShift clusters hosted on AWS: one hub cluster running ACS Central, and one secured cluster with a local registry.
 
 [.tiles.browse]
-== Browse modules
+== Session 1: Reporting and Compliance
 
 [.tile]
 .xref:00-setup.adoc[Cluster setup]
@@ -30,10 +30,13 @@ This workshop covers the full security lifecycle with Red Hat Advanced Cluster S
 * xref:02-compliance.adoc#coverage-dashboard[Coverage dashboard]
 
 [.tile]
-.xref:03-airgapped-scanning.adoc[Step 3: Air-gapped scanning]
-* xref:03-airgapped-scanning.adoc#enable-delegated-scanning[Delegated scanning]
-* xref:03-airgapped-scanning.adoc#push-test-image[Scan a test image]
-* xref:03-airgapped-scanning.adoc#offline-vuln-db[Offline vulnerability database]
+.xref:03-delegated-scanning.adoc[Step 3: Delegated scanning]
+* xref:03-delegated-scanning.adoc#enable-delegated-scanning[Delegated scanning]
+* xref:03-delegated-scanning.adoc#push-test-image[Scan a test image]
+* xref:03-delegated-scanning.adoc#offline-vuln-db[Offline vulnerability database]
+
+[.tiles.browse]
+== Session 2: Vulnerability Management
 
 [.tile]
 .xref:04-vulnerable-workloads.adoc[Step 4: Vulnerable workloads]
@@ -51,6 +54,9 @@ This workshop covers the full security lifecycle with Red Hat Advanced Cluster S
 * xref:06-risk-analysis.adoc#risk-ranking[Risk ranking]
 * xref:06-risk-analysis.adoc#runtime-signals[Runtime signals]
 * xref:06-risk-analysis.adoc#network-graph[Network exposure]
+
+[.tiles.browse]
+== Session 3: Policy and Remediation
 
 [.tile]
 .xref:07-policy-enforcement.adoc[Step 7: Policy enforcement]
@@ -89,5 +95,5 @@ This workshop covers the full security lifecycle with Red Hat Advanced Cluster S
 | AWS (ROSA or OCP IPI) - runs ACS Central + Scanner V4
 
 | Secured cluster
-| AWS (ROSA or OCP IPI) - simulated air-gap with internal registry
+| AWS (ROSA or OCP IPI) - secured cluster with internal registry
 |===

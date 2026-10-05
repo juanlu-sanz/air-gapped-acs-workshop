@@ -1,6 +1,6 @@
 :experimental:
 :source-highlighter: highlightjs
-:title: RHACS: Reporting, Compliance, and Air-Gapped Scanning
+:title: RHACS: Security Lifecycle Workshop
 :hub-context: hub
 :secured-context: secured
 :acs-version: 4.11+

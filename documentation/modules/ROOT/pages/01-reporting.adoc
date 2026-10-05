@@ -336,8 +336,8 @@ TIP: The ACS Prometheus metrics endpoint is at `https://${ACS_CENTRAL_ROUTE}/met
 | No compliance benchmarks are configured
 | xref:02-compliance.adoc[Step 2: Compliance]
 
-| Central cannot scan images in air-gapped registries
-| xref:03-airgapped-scanning.adoc[Step 3: Air-gapped scanning]
+| Central cannot scan images in registries it cannot reach
+| xref:03-delegated-scanning.adoc[Step 3: Delegated scanning]
 |===
 
 == Official documentation

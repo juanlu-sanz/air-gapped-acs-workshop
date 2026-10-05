@@ -25,7 +25,7 @@ This page walks you through the environment preparation: logging into two OpenSh
 
 | Secured cluster
 | `{secured-context}`
-| Simulated air-gapped cluster with internal registry, Scanner-slim, and Sensor
+| Secured cluster with internal registry, Scanner-slim, and Sensor
 |===
 
 == Option A: Pre-provisioned clusters (Demo Platform)
@@ -190,11 +190,11 @@ You can re-run `source myenv.sh` at any time. The context cleanup at the top mak
 | kubeadmin password for the secured cluster
 
 | `ACS_CENTRAL_ROUTE`
-| `01-reporting`, `02-compliance`, `03-airgapped-scanning`
+| `01-reporting`, `02-compliance`, `03-delegated-scanning`
 | External hostname of ACS Central (set after step 6)
 
 | `ROX_API_TOKEN`
-| `01-reporting`, `03-airgapped-scanning`
+| `01-reporting`, `03-delegated-scanning`
 | API token for `roxctl` and API calls (set after step 6)
 |===
 

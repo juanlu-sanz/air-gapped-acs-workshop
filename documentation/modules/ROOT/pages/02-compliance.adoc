@@ -238,7 +238,7 @@ TIP: Download the results as CSV from the Coverage page for offline analysis or 
 | Remaining problem | Addressed in
 
 | Central cannot scan images in a registry it cannot reach
-| xref:03-airgapped-scanning.adoc[Step 3: Air-gapped scanning]
+| xref:03-delegated-scanning.adoc[Step 3: Delegated scanning]
 |===
 
 == Official documentation
