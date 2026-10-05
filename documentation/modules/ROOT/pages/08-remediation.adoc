@@ -40,8 +40,8 @@ The RHACS admission controller from xref:07-policy-enforcement.adoc[Step 7] chec
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-roxctl deployment check --insecure-skip-tls-verify \
-  --cluster $(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" --insecure-skip-tls-verify \
+  deployment check --cluster $(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
     "https://${ACS_CENTRAL_ROUTE}/v1/clusters" | jq -r '.clusters[0].name') \
   -f 08-remediation/02-legacy-frontend-hardened.yaml \
   -f 08-remediation/03-node-agent-hardened.yaml --output table

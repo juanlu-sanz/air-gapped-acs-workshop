@@ -203,8 +203,8 @@ In *Violations*, filter by namespace `acs-workshop`. You should see an *Emergenc
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-roxctl image check --insecure-skip-tls-verify \
-  --image ghcr.io/christophetd/log4shell-vulnerable-app:latest --output table
+roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" --insecure-skip-tls-verify \
+  image check --image ghcr.io/christophetd/log4shell-vulnerable-app:latest --output table
 echo "exit code: $?"
 ----
 
@@ -213,8 +213,8 @@ The `deployment check` command evaluates a manifest as if it were deployed to a 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-roxctl deployment check --insecure-skip-tls-verify \
-  --cluster $(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" --insecure-skip-tls-verify \
+  deployment check --cluster $(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
     "https://${ACS_CENTRAL_ROUTE}/v1/clusters" | jq -r '.clusters[0].name') \
   -f 04-vulnerable-workloads/03-legacy-frontend.yaml --output table
 ----

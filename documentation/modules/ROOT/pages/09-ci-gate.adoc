@@ -72,18 +72,18 @@ The output should be a non-empty JWT token. If it prints `null` or empty, check 
 [source,bash,subs="+macros,+attributes"]
 ----
 # report: CVE list and SBOM (artifacts, never fail)
-roxctl image scan --insecure-skip-tls-verify \
-  --image "$IMAGE" --output csv > image-scan.csv
-roxctl image sbom --insecure-skip-tls-verify \
-  --image "$IMAGE" > sbom.spdx.json
+roxctl -e "https://${ROX_ENDPOINT}" --insecure-skip-tls-verify \
+  image scan --image "$IMAGE" --output csv > image-scan.csv
+roxctl -e "https://${ROX_ENDPOINT}" --insecure-skip-tls-verify \
+  image sbom --image "$IMAGE" > sbom.spdx.json
 
 # gate 1: build-time policies (non-zero exit = job fails)
-roxctl image check --insecure-skip-tls-verify \
-  --image "$IMAGE" --output junit > image-check.junit.xml
+roxctl -e "https://${ROX_ENDPOINT}" --insecure-skip-tls-verify \
+  image check --image "$IMAGE" --output junit > image-check.junit.xml
 
 # gate 2: deploy-time policies against the manifests
-roxctl deployment check --insecure-skip-tls-verify \
-  --cluster "$ROX_CLUSTER" -f k8s/deployment.yaml \
+roxctl -e "https://${ROX_ENDPOINT}" --insecure-skip-tls-verify \
+  deployment check --cluster "$ROX_CLUSTER" -f k8s/deployment.yaml \
   --output junit > deployment-check.junit.xml
 ----
 
@@ -103,7 +103,7 @@ roxctl deployment check --insecure-skip-tls-verify \
 ----
 cd 09-ci-gate
 ROX_API_TOKEN="${ROX_CI_TOKEN}" ROX_TLS_FLAG=--insecure-skip-tls-verify \
-ROX_ENDPOINT="${ACS_CENTRAL_ROUTE}" \
+ROX_ENDPOINT="${ACS_CENTRAL_ROUTE}:443" \
 IMAGE=ghcr.io/christophetd/log4shell-vulnerable-app:latest \
 MANIFESTS="../04-vulnerable-workloads/04-log4shell-app.yaml" \
 ROX_CLUSTER=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
@@ -142,7 +142,7 @@ Only policies with fail build enforcement break the build. The inform-only untru
 [source,bash,subs="+macros,+attributes"]
 ----
 ROX_API_TOKEN="${ROX_CI_TOKEN}" ROX_TLS_FLAG=--insecure-skip-tls-verify \
-ROX_ENDPOINT="${ACS_CENTRAL_ROUTE}" \
+ROX_ENDPOINT="${ACS_CENTRAL_ROUTE}:443" \
 IMAGE=registry.access.redhat.com/hi/nginx:1 \
 MANIFESTS="../08-remediation/02-legacy-frontend-hardened.yaml" \
 ROX_CLUSTER=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
