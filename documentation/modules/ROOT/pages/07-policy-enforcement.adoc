@@ -142,6 +142,9 @@ Expected results:
 
 The namespace, RBAC, Services, and Route are reported as `unchanged`. Only the vulnerable pod specs are rejected. Each rejected attempt also shows up in *Violations*, marked as enforced.
 
+.Violations view — deploy-time and runtime violations for the acs-workshop workloads
+image::07-violations.png[Violations view showing policy violations including Log4Shell Exec into Pod and Privileged Container for acs-workshop deployments]
+
 .Verify: Only payments-api is running
 [%collapsible]
 ====

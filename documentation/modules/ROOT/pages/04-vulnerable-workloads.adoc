@@ -153,6 +153,11 @@ curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
 
 NOTE: If the vulnerability data is empty or shows zero CVEs, wait another minute and refresh. Scanner V4 needs time to index the images against its vulnerability database.
 
+Open the ACS Dashboard. The three `acs-workshop` deployments should appear in *Deployments at most risk* with priority 1, 2, and 3. The *Images at most risk* panel shows the UBI 8.4 and nginx images with their fixable CVE counts.
+
+.ACS Dashboard after deploying the vulnerable workloads
+image::04-dashboard-risk-overview.png[ACS Dashboard showing acs-workshop deployments at the top of the risk list]
+
 '''
 
 == What this solves (compared to previous steps)
