@@ -1,7 +1,11 @@
-= Step 3 - Air-Gapped Scanning: Delegated image scanning in a disconnected environment
+= Step 3 - Delegated Scanning: Scanning images in registries Central cannot reach
 include::_attributes.adoc[]
 
-In many environments, container registries sit behind network boundaries that ACS Central cannot reach. Delegated scanning solves this: Scanner-slim on the secured cluster pulls and indexes images locally, then sends the results to Central for vulnerability matching. This step simulates that scenario by blocking Central's access to the secured cluster's internal registry and configuring delegated scanning.
+When a container registry sits behind network boundaries that ACS Central cannot reach, delegated scanning handles the work locally. Scanner-slim on the secured cluster pulls and indexes images, then sends the results to Central for vulnerability matching. Common reasons for using delegated scanning include air-gapped or disconnected environments, registries in a DMZ, internal OpenShift registries on remote clusters, and any network topology where Central lacks direct registry access.
+
+This step configures delegated scanning on the secured cluster and verifies end-to-end results in Central.
+
+TIP: If your environment is air-gapped, this step also includes optional sections for simulating network isolation and updating the vulnerability database offline. Skip those sections if Central already cannot reach the target registry.
 
 == Prerequisites
 
@@ -12,7 +16,7 @@ In many environments, container registries sit behind network boundaries that AC
 
 == How it works
 
-In a normal setup, ACS Central scans images by pulling them directly from the registry. When Central cannot reach a registry (because it is behind an air gap, in a DMZ, or on an isolated network), the scan request is delegated to a secured cluster that can reach the registry.
+In a normal setup, ACS Central scans images by pulling them directly from the registry. When Central cannot reach a registry (because it is on a different network, behind a firewall, in a DMZ, or in an air-gapped environment), the scan request is delegated to a secured cluster that can reach the registry.
 
 The flow:
 
@@ -21,12 +25,16 @@ The flow:
 3. Scanner-slim on the secured cluster pulls the image, indexes its contents, and sends the index data back to Central.
 4. Central matches the index data against its vulnerability database and stores the results.
 
-In a real air-gapped environment, the vulnerability database also needs manual updates because Central cannot download new definitions from the internet. The `roxctl scanner download-db` and `roxctl scanner upload-db` commands handle that.
+In a disconnected environment, the vulnerability database also needs manual updates because Central cannot download new definitions from the internet. The `roxctl scanner download-db` and `roxctl scanner upload-db` commands handle that (see the optional section at the end of this step).
 
 == Steps to apply
 
 [#simulate-airgap]
-=== 1. Simulate an air-gapped registry
+=== 1. (Optional) Simulate an air-gapped registry
+
+NOTE: This section is only needed if you want to simulate network isolation for demonstration purposes. Skip to <<enable-delegated-scanning>> if Central already cannot reach the target registry.
+
+icon:clock[] ~15 seconds (registry route exposure may take up to 15s if not already exposed)
 
 *What:* Apply a NetworkPolicy that blocks traffic from outside the secured cluster to the internal OpenShift registry.
 
@@ -56,7 +64,7 @@ Now apply the NetworkPolicy that restricts external access:
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-oc apply -f 03-airgapped-scanning/registry-network-policy.yaml --context secured
+oc apply -f 03-delegated-scanning/registry-network-policy.yaml --context secured
 ----
 
 .Verify: Central cannot reach the registry
@@ -176,7 +184,7 @@ Create a namespace and an ImageStream, then import an image:
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-oc apply -f 03-airgapped-scanning/scan-test-namespace.yaml --context secured
+oc apply -f 03-delegated-scanning/scan-test-namespace.yaml --context secured
 ----
 
 [.console-input]
@@ -192,7 +200,7 @@ Now deploy a pod from the internal registry image so ACS observes it:
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
-oc apply -f 03-airgapped-scanning/test-deployment.yaml --context secured
+oc apply -f 03-delegated-scanning/test-deployment.yaml --context secured
 ----
 
 .Verify: Pod is running with an image from the internal registry
@@ -271,11 +279,15 @@ A non-zero component count confirms Scanner-slim indexed the image and Central m
 '''
 
 [#offline-vuln-db]
-=== 5. Update the vulnerability database offline
+=== 5. (Optional) Update the vulnerability database offline
+
+NOTE: This section is only required in disconnected environments where Central cannot fetch vulnerability updates from the internet. Skip this if Central has internet access.
+
+icon:clock[] ~5 minutes (download ~500 MB, upload ~1 minute)
 
 *What:* Download the Scanner V4 vulnerability definitions on a connected workstation and upload them to Central.
 
-*Why:* In a real air-gapped environment, Central cannot fetch vulnerability updates from the internet. Without fresh definitions, scans will miss recently disclosed CVEs. This procedure keeps the database current.
+*Why:* In an air-gapped environment, Central cannot fetch vulnerability updates from the internet. Without fresh definitions, scans will miss recently disclosed CVEs. This procedure keeps the database current.
 
 On a workstation with internet access, download the definitions:
 
@@ -334,6 +346,19 @@ IMPORTANT: In production air-gapped environments, automate this process. Downloa
 | Manual upload of definitions via `roxctl scanner upload-db` keeps the database current
 |===
 
+== What this does NOT solve (yet)
+
+[cols="2,3",options="header"]
+|===
+| Remaining problem | Addressed in
+
+| Too many CVEs to act on - no prioritization or risk acceptance workflows
+| xref:04-risk-mitigation.adoc[Step 4: Risk Mitigation]
+
+| No policy enforcement to block vulnerable deployments
+| xref:04-risk-mitigation.adoc#policy-enforcement[Step 4: Deploy-time policy enforcement]
+|===
+
 == Official documentation
 
 * link:https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/operating/examine-images-for-vulnerabilities#delegated-image-scanning_examine-images-for-vulnerabilities[Delegated image scanning in RHACS 4.11]
@@ -366,8 +391,8 @@ Remove the test workloads, the delegated scanning configuration, and the network
 [source,bash]
 ----
 # Delete test workloads
-oc delete -f 03-airgapped-scanning/test-deployment.yaml --context secured --ignore-not-found
-oc delete -f 03-airgapped-scanning/scan-test-namespace.yaml --context secured --ignore-not-found --wait
+oc delete -f 03-delegated-scanning/test-deployment.yaml --context secured --ignore-not-found
+oc delete -f 03-delegated-scanning/scan-test-namespace.yaml --context secured --ignore-not-found --wait
 
 # Reset delegated scanning to "None" (default)
 curl -sk -X PUT -H "Authorization: Bearer ${ROX_API_TOKEN}" \
@@ -376,7 +401,7 @@ curl -sk -X PUT -H "Authorization: Bearer ${ROX_API_TOKEN}" \
   -d '{"enabledFor": "NONE", "registries": []}'
 
 # Remove the network policy
-oc delete -f 03-airgapped-scanning/registry-network-policy.yaml --context secured --ignore-not-found
+oc delete -f 03-delegated-scanning/registry-network-policy.yaml --context secured --ignore-not-found
 
 # Remove the scanner vuln updates file
 rm -f scanner-vuln-updates.zip

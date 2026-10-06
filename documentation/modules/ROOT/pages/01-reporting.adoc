@@ -83,7 +83,8 @@ curl -sk -X POST -H "Authorization: Bearer ${ROX_API_TOKEN}" \
     \"vulnReportFilters\": {
       \"severities\": [\"CRITICAL_VULNERABILITY_SEVERITY\", \"IMPORTANT_VULNERABILITY_SEVERITY\"],
       \"fixability\": \"FIXABLE\",
-      \"imageTypes\": [\"DEPLOYED\"]
+      \"imageTypes\": [\"DEPLOYED\"],
+      \"sinceLastSentScheduledReport\": true
     },
     \"resourceScope\": {
       \"collectionScope\": {\"collectionId\": \"${COLLECTION_ID}\"}
@@ -114,6 +115,8 @@ curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
 
 === 2. Generate and download a report
 
+icon:clock[] ~15 seconds (report generation is async; polling for completion)
+
 *What:* Run the report on demand and download it as CSV.
 
 *Why:* On-demand generation lets you get a current snapshot before a meeting or audit without waiting for the schedule.
@@ -121,6 +124,8 @@ curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
 In the ACS UI, go to Vulnerability Management > Reporting, click the `secured-cluster-vulns` report, and click "Generate report". Once the report completes, click "Download" to get the CSV file.
 
 You can also trigger the report from the API:
+
+NOTE: The on-demand report generation via API requires an email notifier configured in the report. If no email notifier is set, the API returns an error. Use the ACS UI to generate and download reports without email configuration.
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
@@ -331,8 +336,8 @@ TIP: The ACS Prometheus metrics endpoint is at `https://${ACS_CENTRAL_ROUTE}/met
 | No compliance benchmarks are configured
 | xref:02-compliance.adoc[Step 2: Compliance]
 
-| Central cannot scan images in air-gapped registries
-| xref:03-airgapped-scanning.adoc[Step 3: Air-gapped scanning]
+| Central cannot scan images in registries it cannot reach
+| xref:03-delegated-scanning.adoc[Step 3: Delegated scanning]
 |===
 
 == Official documentation

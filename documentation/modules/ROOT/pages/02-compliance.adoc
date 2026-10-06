@@ -33,9 +33,13 @@ You can also check from the CLI:
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
 ----
+SECURED_CLUSTER_ID=$(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "https://${ACS_CENTRAL_ROUTE}/v1/clusters" | \
+  jq -r '.clusters[] | select(.name=="secured") | .id')
+
 curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
-  "https://${ACS_CENTRAL_ROUTE}/v2/compliance/profiles" | \
-  jq '.profiles[] | {name: .name, title: .title, profileVersion: .profileVersion}'
+  "https://${ACS_CENTRAL_ROUTE}/v2/compliance/profiles/cluster?cluster_id=${SECURED_CLUSTER_ID}" | \
+  jq '.profiles[] | {name: .name, productType: .productType}'
 ----
 
 .Verify: Profiles are listed
@@ -91,11 +95,13 @@ For air-gapped and defense environments, STIG is typically the primary standard.
 
 *Why:* Scheduled scans provide continuous compliance monitoring without manual intervention.
 
+NOTE: On ROSA HCP clusters, only _node_-type profiles (e.g., `ocp4-cis-node`, `ocp4-stig-node`) are available because the control plane is managed by Red Hat. Platform-level profiles like `ocp4-cis` are not present. Adapt the profile selection to what your cluster supports.
+
 In the ACS console, go to Compliance > Schedules and click "Create scan schedule":
 
 * Name: `weekly-cis-stig`
 * Clusters: Select both `hub` and `secured`
-* Profiles: Select `ocp4-cis`, `ocp4-cis-node`, `ocp4-stig`, `ocp4-stig-node`
+* Profiles: Select `ocp4-cis-node`, `ocp4-stig-node` (or platform profiles if available on self-managed clusters)
 * Frequency: Weekly
 * Day: Sunday
 * Time: 02:00 UTC
@@ -130,6 +136,8 @@ curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
 [#tailored-profile]
 === 4. Create a tailored profile
 
+icon:clock[] ~30 seconds (TailoredProfile CR creation + parsing)
+
 *What:* Create a TailoredProfile CR on the secured cluster that extends the CIS benchmark and disables a specific rule.
 
 *Why:* Organizations rarely adopt a benchmark without changes. Tailored profiles let you document and enforce approved deviations. For example, you may need to disable a check that conflicts with your infrastructure or is handled by a different control.
@@ -162,7 +170,7 @@ You can also check via API:
 [source,bash,subs="+macros,+attributes"]
 ----
 curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
-  "https://${ACS_CENTRAL_ROUTE}/v2/compliance/profiles" | \
+  "https://${ACS_CENTRAL_ROUTE}/v2/compliance/profiles/cluster?cluster_id=${SECURED_CLUSTER_ID}" | \
   jq '.profiles[] | select(.name | contains("cis-custom"))'
 ----
 ====
@@ -230,7 +238,7 @@ TIP: Download the results as CSV from the Coverage page for offline analysis or 
 | Remaining problem | Addressed in
 
 | Central cannot scan images in a registry it cannot reach
-| xref:03-airgapped-scanning.adoc[Step 3: Air-gapped scanning]
+| xref:03-delegated-scanning.adoc[Step 3: Delegated scanning]
 |===
 
 == Official documentation

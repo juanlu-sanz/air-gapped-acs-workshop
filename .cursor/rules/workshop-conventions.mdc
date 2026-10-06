@@ -1,5 +1,5 @@
 ---
-description: Conventions for the RHACS Reporting, Compliance, and Air-Gapped Scanning workshop
+description: Conventions for the RHACS Security Lifecycle Workshop
 globs: "**/*.adoc,**/*.yaml,**/*.yml"
 alwaysApply: false
 ---
@@ -8,7 +8,7 @@ alwaysApply: false
 
 ## Repository purpose
 
-This workshop walks participants through three RHACS capabilities on OpenShift: vulnerability and compliance reporting, Compliance Operator integration with tailored profiles, and delegated image scanning in a simulated air-gapped environment. The demo runs on two AWS-hosted OCP clusters (one hub with ACS Central, one secured cluster with a local registry).
+This workshop covers the full RHACS security lifecycle on OpenShift: vulnerability and compliance reporting, Compliance Operator integration with tailored profiles, delegated image scanning for registries Central cannot reach, vulnerability management with roxctl and Red Hat VEX data, risk analysis, policy enforcement as code, remediation and hardening, and CI/CD integration. The demo runs on two AWS-hosted OCP clusters (one hub with ACS Central, one secured cluster with a local registry).
 
 ## Structure
 
@@ -18,7 +18,13 @@ This workshop walks participants through three RHACS capabilities on OpenShift: 
 - `00-setup/` - Operator subscriptions and namespace definitions for initial cluster setup
 - `01-reporting/` - Report schedule examples, API integration samples
 - `02-compliance/` - TailoredProfile, ScanSettingBinding, and compliance CRs
-- `03-airgapped-scanning/` - NetworkPolicy, delegated scanning config, test workloads
+- `03-delegated-scanning/` - NetworkPolicy, delegated scanning config, test workloads
+- `04-vulnerable-workloads/` - Intentionally insecure workloads (Log4Shell, privileged agent, outdated NGINX)
+- `05-vulnerability-management` - No YAMLs (analysis only, workflow objects in Central)
+- `06-risk-analysis` - No YAMLs (analysis and runtime observation)
+- `07-policy-enforcement/` - SecurityPolicy CRs for policy-as-code enforcement
+- `08-remediation/` - Hardened manifests, NetworkPolicies for compensating controls
+- `09-ci-gate/` - Portable roxctl CI gate script
 - Steps are progressive: each builds on the previous one
 
 ## AsciiDoc formatting

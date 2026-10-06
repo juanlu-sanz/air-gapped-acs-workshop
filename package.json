@@ -1,6 +1,6 @@
 {
   "name": "air-gapped-acs-workshop",
-  "description": "RHACS Adoption Workshop: Reporting, Compliance, and Air-Gapped Scanning - Course Documentation Site",
+  "description": "RHACS Adoption Workshop: Security Lifecycle - Course Documentation Site",
   "homepage": "https://juanlu-sanz.github.io/air-gapped-acs-workshop",
   "dependencies": {
     "@antora/cli": "^2.3.1",

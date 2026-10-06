@@ -17,6 +17,11 @@ setup/terraform.tfstate.backup
 setup/terraform.tfvars
 setup/*.tfplan
 
+# CI gate artifacts
+rhacs-reports/
+*.spdx.json
+*.junit.xml
+
 # Antora / Node.js
 node_modules/
 .cache/

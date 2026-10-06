@@ -1,5 +1,5 @@
 name: air-gapped-acs-workshop
-title: "RHACS: Reporting, Compliance, and Air-Gapped Scanning"
+title: "RHACS: Security Lifecycle Workshop"
 version: master
 nav:
   - modules/ROOT/nav.adoc

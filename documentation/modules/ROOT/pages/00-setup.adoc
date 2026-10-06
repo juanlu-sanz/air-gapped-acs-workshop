@@ -25,7 +25,7 @@ This page walks you through the environment preparation: logging into two OpenSh
 
 | Secured cluster
 | `{secured-context}`
-| Simulated air-gapped cluster with internal registry, Scanner-slim, and Sensor
+| Secured cluster with internal registry, Scanner-slim, and Sensor
 |===
 
 == Option A: Pre-provisioned clusters (Demo Platform)
@@ -190,11 +190,11 @@ You can re-run `source myenv.sh` at any time. The context cleanup at the top mak
 | kubeadmin password for the secured cluster
 
 | `ACS_CENTRAL_ROUTE`
-| `01-reporting`, `02-compliance`, `03-airgapped-scanning`
+| `01-reporting`, `02-compliance`, `03-delegated-scanning`
 | External hostname of ACS Central (set after step 6)
 
 | `ROX_API_TOKEN`
-| `01-reporting`, `03-airgapped-scanning`
+| `01-reporting`, `03-delegated-scanning`
 | API token for `roxctl` and API calls (set after step 6)
 |===
 
@@ -206,6 +206,8 @@ IMPORTANT: Never commit `myenv.sh` with real credentials. The `.gitignore` alrea
 == Install ACS Central on the hub cluster
 
 === 4. Install the RHACS Operator
+
+icon:clock[] ~30 seconds (subscription + CSV readiness)
 
 *What:* Install the RHACS Operator from OperatorHub on the hub cluster.
 
@@ -246,6 +248,8 @@ rhacs-operator.v4.11.x     RHACS Operator                               Succeede
 '''
 
 === 5. Create the Central instance
+
+icon:clock[] ~1 minute (CR accepted in ~10s, pods ready in ~45s)
 
 *What:* Deploy the ACS Central custom resource in the `stackrox` namespace.
 
@@ -291,6 +295,8 @@ scanner-v4-db-xxxxxxx-xxxxx   1/1     Running   0          2m
 
 === 6. Retrieve the admin password and Central route
 
+icon:clock[] ~2-3 minutes (Central API may take up to 3 minutes to become responsive after pods are ready)
+
 *What:* Get the initial admin password and the route to access the ACS console.
 
 *Why:* You need these to log in and generate an API token.
@@ -309,7 +315,7 @@ export ACS_CENTRAL_ROUTE=$(oc get route central -n stackrox --context hub -o jso
 echo "ACS Console: https://${ACS_CENTRAL_ROUTE}"
 ----
 
-Log in at that URL with username `admin` and the password from above. Then generate an API token under Platform Configuration > Integrations > Authentication Tokens > API Token, and export it:
+Log in at that URL with username `admin` and the password from above. Then generate an API token under Platform Configuration > Integrations > Authentication > API Token, and export it:
 
 [.console-input]
 [source,bash,subs="+macros,+attributes"]
@@ -323,6 +329,8 @@ export ROX_API_TOKEN="<paste-token-here>"
 == Register the secured cluster
 
 === 7. Install the RHACS Operator on the secured cluster
+
+icon:clock[] ~30 seconds
 
 *What:* Install the same RHACS Operator on the secured cluster.
 
@@ -369,6 +377,8 @@ oc apply -f secured-cluster-init-bundle.yaml -n stackrox --context secured
 '''
 
 === 9. Deploy the SecuredCluster CR
+
+icon:clock[] ~2 minutes (CR accepted in ~7s, all pods ready in ~2 minutes)
 
 *What:* Create the SecuredCluster custom resource on the secured cluster, with Scanner-slim enabled.
 
@@ -429,6 +439,8 @@ You should see both the hub and the secured cluster listed as healthy.
 == Install the Compliance Operator
 
 === 10. Install the Compliance Operator on both clusters
+
+icon:clock[] ~45 seconds (subscription + profile parsing)
 
 *What:* Subscribe to the Compliance Operator on both the hub and the secured cluster.
 
