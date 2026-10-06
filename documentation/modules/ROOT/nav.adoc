@@ -43,6 +43,7 @@
 *** xref:06-risk-analysis.adoc#runtime-signals[Runtime Signals]
 *** xref:06-risk-analysis.adoc#network-graph[Network Exposure]
 *** xref:06-risk-analysis.adoc#remediation-plan[Remediation Plan]
+* Session 4: Policy Enforcement, Remediation, and CI
 ** xref:07-policy-enforcement.adoc[Step 7: Policy Enforcement]
 *** xref:07-policy-enforcement.adoc#remove-workloads[Remove Running Workloads]
 *** xref:07-policy-enforcement.adoc#apply-policies[Apply SecurityPolicy CRs]
