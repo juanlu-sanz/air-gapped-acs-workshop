@@ -31,3 +31,4 @@ jobs:
           folder: ${{ env.SITE_DIR }}
           branch: gh-pages
           commit-message: "[CI] Publish Documentation for ${{ github.sha }}"
+          clean-exclude: pr
