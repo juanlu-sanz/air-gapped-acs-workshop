@@ -55,27 +55,6 @@ This workshop covers the full security lifecycle with Red Hat Advanced Cluster S
 * xref:06-risk-analysis.adoc#runtime-signals[Runtime signals]
 * xref:06-risk-analysis.adoc#network-graph[Network exposure]
 
-[.tiles.browse]
-== Session 4: Policy Enforcement, Remediation, and CI
-
-[.tile]
-.xref:07-policy-enforcement.adoc[Step 7: Policy enforcement]
-* xref:07-policy-enforcement.adoc#apply-policies[SecurityPolicy CRs]
-* xref:07-policy-enforcement.adoc#redeploy-workloads[Admission control blocking]
-* xref:07-policy-enforcement.adoc#break-glass[Break-glass bypass]
-
-[.tile]
-.xref:08-remediation.adoc[Step 8: Remediation]
-* xref:08-remediation.adoc#apply-remediation[Hardened images]
-* xref:08-remediation.adoc#verify-fixes[Compensating controls]
-* xref:08-remediation.adoc#confirm-risk-reduction[Risk reduction]
-
-[.tile]
-.xref:09-ci-gate.adoc[Step 9: CI gate]
-* xref:09-ci-gate.adoc#gate-commands[roxctl CI commands]
-* xref:09-ci-gate.adoc#test-vulnerable[Test vulnerable (FAIL)]
-* xref:09-ci-gate.adoc#test-remediated[Test remediated (PASS)]
-
 == Environment
 
 [cols="2,3",options="header"]
