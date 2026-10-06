@@ -6,7 +6,6 @@
     <title>RHACS: Security Lifecycle Workshop :: RHACS: Security Lifecycle Workshop</title>
     <link rel="canonical" href="https://juanlu-sanz.github.io/air-gapped-acs-workshop/pr/session3-risk-mitigation/air-gapped-acs-workshop/06-risk-analysis.html">
     <link rel="prev" href="05-vulnerability-management.html">
-    <link rel="next" href="07-policy-enforcement.html">
     <meta name="generator" content="Antora 3.0.0">
     <link rel="stylesheet" href="../_/css/site.css">
   </head>
@@ -208,75 +207,6 @@
   </li>
   <li class="nav-item" data-depth="3">
     <a class="nav-link" href="#remediation-plan">Remediation Plan</a>
-  </li>
-</ul>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <button class="nav-item-toggle"></button>
-    <a class="nav-link" href="07-policy-enforcement.html">Step 7: Policy Enforcement</a>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="07-policy-enforcement.html#remove-workloads">Remove Running Workloads</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="07-policy-enforcement.html#apply-policies">Apply SecurityPolicy CRs</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="07-policy-enforcement.html#redeploy-workloads">Re-deploy and Observe Blocking</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="07-policy-enforcement.html#break-glass">Break-Glass Bypass</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="07-policy-enforcement.html#shift-left-preview">Shift-Left Preview with roxctl</a>
-  </li>
-</ul>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <button class="nav-item-toggle"></button>
-    <a class="nav-link" href="08-remediation.html">Step 8: Remediation</a>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="08-remediation.html#pre-check">Pre-check Hardened Manifests</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="08-remediation.html#remove-privileges">Remove Excess Privileges</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="08-remediation.html#create-secret">Create Database Secret</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="08-remediation.html#apply-remediation">Apply Hardened Manifests</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="08-remediation.html#verify-fixes">Verify Fixes</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="08-remediation.html#confirm-risk-reduction">Confirm Risk Reduction</a>
-  </li>
-</ul>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <button class="nav-item-toggle"></button>
-    <a class="nav-link" href="09-ci-gate.html">Step 9: CI Gate</a>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="09-ci-gate.html#ci-token">Create CI Token</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="09-ci-gate.html#gate-commands">Gate Commands</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="09-ci-gate.html#test-vulnerable">Test Vulnerable Image (FAIL)</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="09-ci-gate.html#test-remediated">Test Remediated Image (PASS)</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="09-ci-gate.html#review-reports">Review CI Reports</a>
-  </li>
-  <li class="nav-item" data-depth="3">
-    <a class="nav-link" href="09-ci-gate.html#wire-ci-tool">Wire into CI/CD Tool</a>
   </li>
 </ul>
   </li>
@@ -492,7 +422,7 @@ oc --context secured exec -n acs-workshop deploy/node-agent -- \
 <summary class="title">Verify: Network Graph shows no network policies</summary>
 <div class="content">
 <div class="paragraph">
-<p>All three deployments should show unrestricted ingress and egress. The graph visualizes the attack surface that <a href="08-remediation.html" class="xref page">Step 8</a> will lock down.</p>
+<p>All three deployments should show unrestricted ingress and egress. The graph visualizes the attack surface that <a href="#08-remediation.adoc" class="xref unresolved">Step 8</a> will lock down.</p>
 </div>
 </div>
 </details>
@@ -614,11 +544,11 @@ oc --context secured exec -n acs-workshop deploy/node-agent -- \
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Risk is understood but nothing enforces the remediation plan</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="07-policy-enforcement.html" class="xref page">Step 7: Policy Enforcement</a> turns the plan into automated guardrails</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#07-policy-enforcement.adoc" class="xref unresolved">Step 7: Policy Enforcement</a> turns the plan into automated guardrails</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The workloads are still running with all their vulnerabilities and misconfigurations</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="08-remediation.html" class="xref page">Step 8: Remediation</a> fixes the workloads and verifies that risk goes down</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#08-remediation.adoc" class="xref unresolved">Step 8: Remediation</a> fixes the workloads and verifies that risk goes down</p></td>
 </tr>
 </tbody>
 </table>
@@ -696,7 +626,6 @@ oc --context secured exec -n acs-workshop deploy/node-agent -- \
 </div>
 <nav class="pagination">
   <span class="prev"><a href="05-vulnerability-management.html">Step 5: Vulnerability Management</a></span>
-  <span class="next"><a href="07-policy-enforcement.html">Step 7: Policy Enforcement</a></span>
 </nav>
 </article>
 <aside class="toc sidebar" data-title="Contents" data-levels="2">
