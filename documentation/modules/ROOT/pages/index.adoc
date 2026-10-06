@@ -55,6 +55,9 @@ This workshop covers the full security lifecycle with Red Hat Advanced Cluster S
 * xref:06-risk-analysis.adoc#runtime-signals[Runtime signals]
 * xref:06-risk-analysis.adoc#network-graph[Network exposure]
 
+[.tiles.browse]
+== Session 4: Policy Enforcement, Remediation, and CI
+
 [.tile]
 .xref:07-policy-enforcement.adoc[Step 7: Policy enforcement]
 * xref:07-policy-enforcement.adoc#apply-policies[SecurityPolicy CRs]
