@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>RHACS: Reporting, Compliance, and Air-Gapped Scanning :: RHACS: Reporting, Compliance, and Air-Gapped Scanning</title>
+    <title>RHACS: Security Lifecycle Workshop :: RHACS: Security Lifecycle Workshop</title>
     <link rel="canonical" href="https://juanlu-sanz.github.io/air-gapped-acs-workshop/air-gapped-acs-workshop/index.html">
     <link rel="next" href="00-setup.html">
     <meta name="generator" content="Antora 3.0.0">
@@ -14,7 +14,7 @@
   <nav class="navbar">
     <div class="navbar-brand">
       <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
-      <a class="navbar-item" style="font-size: 24px; color: white" href="https://juanlu-sanz.github.io/air-gapped-acs-workshop">RHACS: Reporting, Compliance, and Air-Gapped Scanning</a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://juanlu-sanz.github.io/air-gapped-acs-workshop">RHACS: Security Lifecycle Workshop</a>
       <button class="navbar-burger" data-target="topbar-nav">
         <span></span>
         <span></span>
@@ -55,88 +55,160 @@
   </li>
   <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
-    <a class="nav-link" href="00-setup.html">Cluster Setup</a>
+    <span class="nav-text">Session 2: Reporting and Compliance</span>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Cluster Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="00-setup.html#prerequisites">Prerequisites</a>
   </li>
-  <li class="nav-item" data-depth="2">
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="00-setup.html#export-variables">Export Workshop Variables</a>
   </li>
-  <li class="nav-item" data-depth="2">
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="00-setup.html#login-clusters">Log In to Clusters</a>
   </li>
-  <li class="nav-item" data-depth="2">
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="00-setup.html#rename-contexts">Rename Contexts</a>
   </li>
-  <li class="nav-item" data-depth="2">
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="00-setup.html#install-acs">Install ACS Central</a>
   </li>
-  <li class="nav-item" data-depth="2">
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="00-setup.html#register-secured-cluster">Register Secured Cluster</a>
   </li>
-  <li class="nav-item" data-depth="2">
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="00-setup.html#install-compliance-operator">Install Compliance Operator</a>
   </li>
 </ul>
   </li>
-  <li class="nav-item" data-depth="1">
+  <li class="nav-item" data-depth="2">
     <button class="nav-item-toggle"></button>
     <a class="nav-link" href="01-reporting.html">Step 1: Reporting</a>
 <ul class="nav-list">
-  <li class="nav-item" data-depth="2">
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="01-reporting.html#vulnerability-report">Create a Vulnerability Report</a>
   </li>
-  <li class="nav-item" data-depth="2">
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="01-reporting.html#schedule-report">Schedule Recurring Reports</a>
   </li>
-  <li class="nav-item" data-depth="2">
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="01-reporting.html#interpret-report">Interpret Report for a Risk Team</a>
   </li>
-  <li class="nav-item" data-depth="2">
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="01-reporting.html#api-export">Export Data via API</a>
   </li>
 </ul>
   </li>
-  <li class="nav-item" data-depth="1">
+  <li class="nav-item" data-depth="2">
     <button class="nav-item-toggle"></button>
     <a class="nav-link" href="02-compliance.html">Step 2: Compliance</a>
 <ul class="nav-list">
-  <li class="nav-item" data-depth="2">
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="02-compliance.html#compliance-overview">Compliance in ACS</a>
   </li>
-  <li class="nav-item" data-depth="2">
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="02-compliance.html#profiles">CIS and STIG Profiles</a>
   </li>
-  <li class="nav-item" data-depth="2">
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="02-compliance.html#schedule-scan">Schedule a Compliance Scan</a>
   </li>
-  <li class="nav-item" data-depth="2">
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="02-compliance.html#tailored-profile">Create a Tailored Profile</a>
   </li>
-  <li class="nav-item" data-depth="2">
+  <li class="nav-item" data-depth="3">
     <a class="nav-link" href="02-compliance.html#coverage-dashboard">Coverage Dashboard</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="03-delegated-scanning.html">Step 3: Delegated Scanning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="03-delegated-scanning.html#simulate-airgap">Simulate an Air-Gapped Registry (Optional)</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="03-delegated-scanning.html#enable-delegated-scanning">Enable Delegated Scanning</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="03-delegated-scanning.html#push-test-image">Push a Test Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="03-delegated-scanning.html#verify-scan">Verify Scan Results</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="03-delegated-scanning.html#offline-vuln-db">Update Vulnerability Database Offline (Optional)</a>
+  </li>
+</ul>
   </li>
 </ul>
   </li>
   <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
-    <a class="nav-link" href="03-airgapped-scanning.html">Step 3: Air-Gapped Scanning</a>
+    <span class="nav-text">Session 3: Risk Mitigation and Vulnerability Management</span>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="03-airgapped-scanning.html#simulate-airgap">Simulate an Air-Gapped Registry</a>
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="04-vulnerable-workloads.html">Step 4: Deploy Vulnerable Workloads</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="04-vulnerable-workloads.html#deploy-workloads">Deploy the Application</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="04-vulnerable-workloads.html#wait-for-pods">Wait for Pods</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="04-vulnerable-workloads.html#check-frontend-route">Check the Frontend Route</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="04-vulnerable-workloads.html#verify-acs-scan">Verify ACS Scan</a>
+  </li>
+</ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="03-airgapped-scanning.html#enable-delegated-scanning">Enable Delegated Scanning</a>
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="05-vulnerability-management.html">Step 5: Vulnerability Management</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="05-vulnerability-management.html#explore-portal">Explore Workload CVEs in Portal</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="05-vulnerability-management.html#roxctl-scan">Scan and Inspect from CLI</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="05-vulnerability-management.html#vex-data">Evaluate CVEs Against VEX Data</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="05-vulnerability-management.html#security-data-api">Red Hat Security Data API</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="05-vulnerability-management.html#defer-false-positive">Defer and False Positive Workflows</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="05-vulnerability-management.html#schedule-report">Schedule a Vulnerability Report</a>
+  </li>
+</ul>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="03-airgapped-scanning.html#push-test-image">Push a Test Image</a>
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="06-risk-analysis.html">Step 6: Risk Analysis</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="06-risk-analysis.html#risk-ranking">Risk Ranking</a>
   </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="03-airgapped-scanning.html#verify-scan">Verify Scan Results</a>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="06-risk-analysis.html#runtime-signals">Runtime Signals</a>
   </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="03-airgapped-scanning.html#offline-vuln-db">Update Vulnerability Database Offline</a>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="06-risk-analysis.html#network-graph">Network Exposure</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="06-risk-analysis.html#remediation-plan">Remediation Plan</a>
+  </li>
+</ul>
   </li>
 </ul>
   </li>
@@ -154,7 +226,7 @@
   <a href="index.html" class="home-link is-current"></a>
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
-    <li><a href="index.html">RHACS: Reporting, Compliance, and Air-Gapped Scanning</a></li>
+    <li><a href="index.html">RHACS: Security Lifecycle Workshop</a></li>
     <li><a href="index.html">Overview</a></li>
   </ul>
 </nav>
@@ -162,17 +234,17 @@
   </div>
   <div class="content">
 <article class="doc">
-<h1 class="page">RHACS: Reporting, Compliance, and Air-Gapped Scanning</h1>
+<h1 class="page">RHACS: Security Lifecycle Workshop</h1>
 <div class="sect1 text-center strong">
-<h2>Security reporting, compliance posture, and scanning in disconnected environments</h2>
+<h2>Security reporting, compliance posture, vulnerability management, and risk mitigation on OpenShift</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>This workshop covers three areas of Red Hat Advanced Cluster Security for Kubernetes (RHACS). You will create and schedule vulnerability reports, integrate the Compliance Operator with CIS and STIG benchmarks through tailored profiles, and configure delegated image scanning for a registry that ACS Central cannot reach directly. The exercises run on two OpenShift clusters hosted on AWS: one hub cluster running ACS Central, and one secured cluster simulating an air-gapped environment.</p>
+<p>This workshop covers the full security lifecycle with Red Hat Advanced Cluster Security for Kubernetes (RHACS). You will create and schedule vulnerability reports, integrate the Compliance Operator with CIS and STIG benchmarks, configure delegated image scanning for registries that Central cannot reach, deploy intentionally vulnerable workloads to triage CVEs, enforce security policies as code, remediate vulnerabilities, and integrate RHACS into CI/CD pipelines. The exercises run on two OpenShift clusters hosted on AWS: one hub cluster running ACS Central, and one secured cluster with a local registry.</p>
 </div>
 </div>
 </div>
 <div class="sect1 tiles browse">
-<h2>Browse modules</h2>
+<h2>Session 2: Reporting and Compliance</h2>
 <div class="sectionbody">
 <div class="ulist tile">
 <div class="title"><a href="00-setup.html" class="xref page">Cluster setup</a></div>
@@ -217,16 +289,60 @@
 </ul>
 </div>
 <div class="ulist tile">
-<div class="title"><a href="03-airgapped-scanning.html" class="xref page">Step 3: Air-gapped scanning</a></div>
+<div class="title"><a href="03-delegated-scanning.html" class="xref page">Step 3: Delegated scanning</a></div>
 <ul>
 <li>
-<p><a href="03-airgapped-scanning.html#enable-delegated-scanning" class="xref page">Delegated scanning</a></p>
+<p><a href="03-delegated-scanning.html#enable-delegated-scanning" class="xref page">Delegated scanning</a></p>
 </li>
 <li>
-<p><a href="03-airgapped-scanning.html#push-test-image" class="xref page">Scan a test image</a></p>
+<p><a href="03-delegated-scanning.html#push-test-image" class="xref page">Scan a test image</a></p>
 </li>
 <li>
-<p><a href="03-airgapped-scanning.html#offline-vuln-db" class="xref page">Offline vulnerability database</a></p>
+<p><a href="03-delegated-scanning.html#offline-vuln-db" class="xref page">Offline vulnerability database</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1 tiles browse">
+<h2>Session 3: Risk Mitigation and Vulnerability Management</h2>
+<div class="sectionbody">
+<div class="ulist tile">
+<div class="title"><a href="04-vulnerable-workloads.html" class="xref page">Step 4: Vulnerable workloads</a></div>
+<ul>
+<li>
+<p><a href="04-vulnerable-workloads.html#deploy-workloads" class="xref page">Deploy the application</a></p>
+</li>
+<li>
+<p><a href="04-vulnerable-workloads.html#verify-acs-scan" class="xref page">Verify ACS scan</a></p>
+</li>
+</ul>
+</div>
+<div class="ulist tile">
+<div class="title"><a href="05-vulnerability-management.html" class="xref page">Step 5: Vulnerability management</a></div>
+<ul>
+<li>
+<p><a href="05-vulnerability-management.html#roxctl-scan" class="xref page">roxctl scan and SBOM</a></p>
+</li>
+<li>
+<p><a href="05-vulnerability-management.html#vex-data" class="xref page">Red Hat VEX data</a></p>
+</li>
+<li>
+<p><a href="05-vulnerability-management.html#defer-false-positive" class="xref page">CVE exceptions</a></p>
+</li>
+</ul>
+</div>
+<div class="ulist tile">
+<div class="title"><a href="06-risk-analysis.html" class="xref page">Step 6: Risk analysis</a></div>
+<ul>
+<li>
+<p><a href="06-risk-analysis.html#risk-ranking" class="xref page">Risk ranking</a></p>
+</li>
+<li>
+<p><a href="06-risk-analysis.html#runtime-signals" class="xref page">Runtime signals</a></p>
+</li>
+<li>
+<p><a href="06-risk-analysis.html#network-graph" class="xref page">Network exposure</a></p>
 </li>
 </ul>
 </div>
@@ -265,7 +381,7 @@
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Secured cluster</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">AWS (ROSA or OCP IPI) - simulated air-gap with internal registry</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AWS (ROSA or OCP IPI) - secured cluster with internal registry</p></td>
 </tr>
 </tbody>
 </table>
