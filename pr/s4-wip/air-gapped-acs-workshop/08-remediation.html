@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>RHACS: Security Lifecycle Workshop :: RHACS: Security Lifecycle Workshop</title>
+    <link rel="canonical" href="https://juanlu-sanz.github.io/air-gapped-acs-workshop/pr/s4-wip/air-gapped-acs-workshop/08-remediation.html">
+    <link rel="prev" href="07-policy-enforcement.html">
+    <link rel="next" href="09-ci-gate.html">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://developers.redhat.com" target="_blank"><img src="../_/img/RHDLogo.svg" height="40px" alt="Red Hat Developer Program"></a>
+      <a class="navbar-item" style="font-size: 24px; color: white" href="https://juanlu-sanz.github.io/air-gapped-acs-workshop/pr/s4-wip">RHACS: Security Lifecycle Workshop</a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://developers.redhat.com/ebooks/" target="_blank">Books</a>
+        <a class="navbar-item" href="https://developers.redhat.com/cheatsheets/" target="_blank">Cheat Sheets</a>
+        <a class="navbar-item" href="https://developers.redhat.com/events/" target="_blank">Upcoming Events</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Tutorials</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/kubernetes-tutorial/" target="_blank">Kubernetes</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/istio-tutorial/" target="_blank">Istio</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/quarkus-tutorial/" target="_blank">Quarkus</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/knative-tutorial/" target="_blank">Knative</a>
+            <a class="navbar-item" href="https://redhat-developer-demos.github.io/tekton-tutorial/" target="_blank">Tekton</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="air-gapped-acs-workshop" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html"></a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="index.html">Overview</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Session 2: Reporting and Compliance</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="00-setup.html">Cluster Setup</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="00-setup.html#prerequisites">Prerequisites</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="00-setup.html#export-variables">Export Workshop Variables</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="00-setup.html#login-clusters">Log In to Clusters</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="00-setup.html#rename-contexts">Rename Contexts</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="00-setup.html#install-acs">Install ACS Central</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="00-setup.html#register-secured-cluster">Register Secured Cluster</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="00-setup.html#install-compliance-operator">Install Compliance Operator</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="01-reporting.html">Step 1: Reporting</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="01-reporting.html#vulnerability-report">Create a Vulnerability Report</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="01-reporting.html#schedule-report">Schedule Recurring Reports</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="01-reporting.html#interpret-report">Interpret Report for a Risk Team</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="01-reporting.html#api-export">Export Data via API</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="02-compliance.html">Step 2: Compliance</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="02-compliance.html#compliance-overview">Compliance in ACS</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="02-compliance.html#profiles">CIS and STIG Profiles</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="02-compliance.html#schedule-scan">Schedule a Compliance Scan</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="02-compliance.html#tailored-profile">Create a Tailored Profile</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="02-compliance.html#coverage-dashboard">Coverage Dashboard</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="03-delegated-scanning.html">Step 3: Delegated Scanning</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="03-delegated-scanning.html#simulate-airgap">Simulate an Air-Gapped Registry (Optional)</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="03-delegated-scanning.html#enable-delegated-scanning">Enable Delegated Scanning</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="03-delegated-scanning.html#push-test-image">Push a Test Image</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="03-delegated-scanning.html#verify-scan">Verify Scan Results</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="03-delegated-scanning.html#offline-vuln-db">Update Vulnerability Database Offline (Optional)</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Session 3: Risk Mitigation and Vulnerability Management</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="04-vulnerable-workloads.html">Step 4: Deploy Vulnerable Workloads</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="04-vulnerable-workloads.html#deploy-workloads">Deploy the Application</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="04-vulnerable-workloads.html#wait-for-pods">Wait for Pods</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="04-vulnerable-workloads.html#check-frontend-route">Check the Frontend Route</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="04-vulnerable-workloads.html#verify-acs-scan">Verify ACS Scan</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="05-vulnerability-management.html">Step 5: Vulnerability Management</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="05-vulnerability-management.html#explore-portal">Explore Workload CVEs in Portal</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="05-vulnerability-management.html#roxctl-scan">Scan and Inspect from CLI</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="05-vulnerability-management.html#vex-data">Evaluate CVEs Against VEX Data</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="05-vulnerability-management.html#security-data-api">Red Hat Security Data API</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="05-vulnerability-management.html#defer-false-positive">Defer and False Positive Workflows</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="05-vulnerability-management.html#schedule-report">Schedule a Vulnerability Report</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="06-risk-analysis.html">Step 6: Risk Analysis</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="06-risk-analysis.html#risk-ranking">Risk Ranking</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="06-risk-analysis.html#runtime-signals">Runtime Signals</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="06-risk-analysis.html#network-graph">Network Exposure</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="06-risk-analysis.html#remediation-plan">Remediation Plan</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Session 4: Policy Enforcement, Remediation, and CI</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="07-policy-enforcement.html">Step 7: Policy Enforcement</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="07-policy-enforcement.html#remove-workloads">Remove Running Workloads</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="07-policy-enforcement.html#apply-policies">Apply SecurityPolicy CRs</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="07-policy-enforcement.html#redeploy-workloads">Re-deploy and Observe Blocking</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="07-policy-enforcement.html#break-glass">Break-Glass Bypass</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="07-policy-enforcement.html#shift-left-preview">Shift-Left Preview with roxctl</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="08-remediation.html">Step 8: Remediation</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#pre-check">Pre-check Hardened Manifests</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#remove-privileges">Remove Excess Privileges</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#create-secret">Create Database Secret</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#apply-remediation">Apply Hardened Manifests</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#verify-fixes">Verify Fixes</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="#confirm-risk-reduction">Confirm Risk Reduction</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="09-ci-gate.html">Step 9: CI Gate</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="09-ci-gate.html#ci-token">Create CI Token</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="09-ci-gate.html#gate-commands">Gate Commands</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="09-ci-gate.html#test-vulnerable">Test Vulnerable Image (FAIL)</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="09-ci-gate.html#test-remediated">Test Remediated Image (PASS)</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="09-ci-gate.html#review-reports">Review CI Reports</a>
+  </li>
+  <li class="nav-item" data-depth="3">
+    <a class="nav-link" href="09-ci-gate.html#wire-ci-tool">Wire into CI/CD Tool</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">RHACS: Security Lifecycle Workshop</a></li>
+    <li>Session 4: Policy Enforcement, Remediation, and CI</li>
+    <li><a href="08-remediation.html">Step 8: Remediation</a></li>
+  </ul>
+</nav>
+  <div class="edit-this-page"><a href="https://github.com/juanlu-sanz/air-gapped-acs-workshop/edit/s4-wip/documentation/modules/ROOT/pages/08-remediation.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<article class="doc">
+<h1 class="page">RHACS: Security Lifecycle Workshop</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This step carries out the plan from <a href="06-risk-analysis.html" class="xref page">Step 6</a> and shows the difference between remediation (removing the vulnerability) and mitigation (reducing its exploitability when it cannot be removed yet).</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 28.5714%;">
+<col style="width: 28.5714%;">
+<col style="width: 42.8572%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Deployment</th>
+<th class="tableblock halign-left valign-top">Strategy</th>
+<th class="tableblock halign-left valign-top">How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>legacy-frontend</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Remediate</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rebase from upstream <code>nginx:1.22.0-alpine</code> to the Red Hat hardened image <code>hi/nginx</code> (minimal, distroless, non-root). Run under <code>restricted-v2</code>. Move the plaintext secret into a <code>Secret</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>node-agent</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Remediate</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Current <code>ubi9/ubi-minimal</code> base image. Remove privileged mode, host namespaces, and the host mount. Remove the SCC grant.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>payments-api</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Mitigate</strong> (compensating control)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No patched build exists. Apply a default-deny NetworkPolicy that blocks all egress, including DNS, so the Log4Shell JNDI callback cannot connect. Allow ingress only from the frontend. The CVE stays formally deferred (Step 5) and excluded from enforcement (Step 7) until a fixed image is available.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The RHACS admission controller from <a href="07-policy-enforcement.html" class="xref page">Step 7</a> checks each fix as it is applied: a fix passes only if it really meets the policies. The Risk view, Violations, and the Network Graph then confirm that the risk went down.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites"><a class="anchor" href="#_prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="07-policy-enforcement.html" class="xref page">Step 7</a> completed. <code>legacy-frontend</code> and <code>node-agent</code> do not exist (their deployment was blocked), and <code>payments-api</code> runs under its exclusion.</p>
+</li>
+<li>
+<p><code>cluster-admin</code> on the secured cluster (to remove the SCC RoleBindings)</p>
+</li>
+<li>
+<p>OVN-Kubernetes network plugin (the default on OpenShift 4.15+) for NetworkPolicy support</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_steps_to_apply"><a class="anchor" href="#_steps_to_apply"></a>Steps to apply</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="pre-check"><a class="anchor" href="#pre-check"></a>1. Pre-check hardened manifests against RHACS</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Run <code>roxctl deployment check</code> against the hardened manifests before applying them.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> This catches policy violations before the admission controller does. It also pre-caches the image scan in Central, so a scan timeout cannot let an unevaluated image through.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">roxctl -e "https://${ACS_CENTRAL_ROUTE}:443" --insecure-skip-tls-verify \
+  deployment check --cluster $(curl -sk -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+    "https://${ACS_CENTRAL_ROUTE}/v1/clusters" | jq -r '.clusters[0].name') \
+  -f 08-remediation/02-legacy-frontend-hardened.yaml \
+  -f 08-remediation/03-node-agent-hardened.yaml --output table</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>None of the workshop policies with enforcement (fixable Important CVEs, privileged) should show <strong>BREAKS DEPLOY</strong>.</p>
+</div>
+<details>
+<summary class="title">Verify: No enforced policy violations</summary>
+<div class="content">
+<div class="paragraph">
+<p>The output should show the policies but none with a <strong>BREAKS DEPLOY</strong> flag for the hardened images.</p>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="remove-privileges"><a class="anchor" href="#remove-privileges"></a>2. Remove the excess privileges</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Delete the RoleBindings that granted the <code>anyuid</code> and <code>privileged</code> SCCs.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The hardened deployments run under the default <code>restricted-v2</code> SCC. The old RoleBindings must be removed imperatively because a declarative <code>apply</code> does not delete objects.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc --context secured delete rolebinding legacy-frontend-anyuid node-agent-privileged \
+  -n acs-workshop</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: RoleBindings are gone</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc --context secured get rolebinding -n acs-workshop</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="create-secret"><a class="anchor" href="#create-secret"></a>3. Create the database secret</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Put the database password into a <code>Secret</code> instead of a plaintext environment variable.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The hardened frontend reads <code>DB_PASSWORD</code> from a <code>Secret</code>. The password is generated at apply time and never stored in Git.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc --context secured create secret generic legacy-frontend-db -n acs-workshop \
+  --from-literal=DB_PASSWORD="$(openssl rand -base64 18)"</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Secret exists</summary>
+<div class="content">
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc --context secured get secret legacy-frontend-db -n acs-workshop</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="apply-remediation"><a class="anchor" href="#apply-remediation"></a>4. Apply the remediation</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~1 minute (admission check + image pull + pod rollout)</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Apply the hardened namespace labels, hardened deployments, and network policies.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The same admission controller that blocked the originals in Step 7 now admits both deployments, because the hardened pod specs no longer violate the enforced policies.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc --context secured apply -f 08-remediation/01-namespace-restricted.yaml
+oc --context secured apply -f 08-remediation/02-legacy-frontend-hardened.yaml \
+  -f 08-remediation/03-node-agent-hardened.yaml
+oc --context secured apply -f 08-remediation/04-network-policies.yaml
+oc --context secured get pods -n acs-workshop -w</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: All three pods are running</summary>
+<div class="content">
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">NAME                               READY   STATUS    RESTARTS   AGE
+legacy-frontend-yyyyyyyyyy-yyyyy   1/1     Running   0          45s
+node-agent-yyyyyyyyyy-yyyyy        1/1     Running   0          45s
+payments-api-xxxxxxxxxx-xxxxx      1/1     Running   0          70m</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="verify-fixes"><a class="anchor" href="#verify-fixes"></a>5. Verify the fixes and the compensating control</h3>
+<div class="paragraph">
+<p><strong>What:</strong> Confirm the application works and the Log4Shell compensating control is effective.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> Remediation is not complete until you verify that the fix works and the remaining risk is reduced.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># Frontend responds through the Route (served by the Red Hat hardened NGINX image)
+curl -skI "https://$(oc --context secured get route legacy-frontend -n acs-workshop \
+  -o jsonpath='{.spec.host}')" | head -3
+
+# payments-api can no longer resolve names or open outbound connections
+# (Log4Shell callback path is blocked)
+oc --context secured exec -n acs-workshop deploy/payments-api -- \
+  sh -c 'wget -T 3 -qO- <a href="http://example.com" class="bare">http://example.com</a> &gt;/dev/null &amp;&amp; echo OPEN || echo BLOCKED'</code></pre>
+</div>
+</div>
+<details>
+<summary class="title">Verify: Frontend returns HTTP 200 and payments-api egress is blocked</summary>
+<div class="content">
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">HTTP/1.1 200 OK
+server: nginx/1.30.x
+...</code></pre>
+</div>
+</div>
+<div class="listingblock console-output">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">wget: bad address 'example.com'
+BLOCKED</code></pre>
+</div>
+</div>
+</div>
+</details>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="confirm-risk-reduction"><a class="anchor" href="#confirm-risk-reduction"></a>6. Confirm risk reduction in RHACS</h3>
+<div class="paragraph">
+<p><span class="icon"><i class="fa fa-clock"></i></span> ~2 minutes (RHACS re-evaluates after the changes)</p>
+</div>
+<div class="paragraph">
+<p><strong>What:</strong> Check that the risk ranking, violations, and vulnerability counts reflect the remediation.</p>
+</div>
+<div class="paragraph">
+<p><strong>Why:</strong> The whole point of the exercise is to reduce risk. RHACS should confirm the improvement.</p>
+</div>
+<div class="paragraph">
+<p>Allow 1-2 minutes for re-evaluation, then check:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Risk</strong> (namespace <code>acs-workshop</code>): <code>node-agent</code> and <code>legacy-frontend</code> fall down the ranking. Their risk indicators no longer show privileged mode, root, external secrets in env vars, or old images. <code>legacy-frontend</code> now runs a distroless image with no shell or package manager: the Components Useful for Attackers indicator disappears.</p>
+</li>
+<li>
+<p><strong>Violations</strong>: the deploy-time violations for the old pod specs are resolved. Only <code>payments-api</code> still shows Log4Shell and untrusted registry, both inform-only.</p>
+</li>
+<li>
+<p><strong>Vulnerability Management &gt; Results &gt; User Workloads</strong> (namespace <code>acs-workshop</code>): the fixable Important/Critical CVE count drops sharply. What remains comes mostly from <code>payments-api</code>, the accepted risk.</p>
+</li>
+<li>
+<p><strong>Network &gt; Network Graph</strong>: <code>acs-workshop</code> now shows NetworkPolicies. Select <code>payments-api</code> and check that egress is denied.</p>
+</li>
+</ul>
+</div>
+<details>
+<summary class="title">Verify: Risk is measurably lower</summary>
+<div class="content">
+<div class="paragraph">
+<p>The risk ranking for <code>legacy-frontend</code> and <code>node-agent</code> should be significantly lower than before remediation. The <code>oc exec</code> attack path from Step 6 is gone for <code>legacy-frontend</code> (distroless image has no shell).</p>
+</div>
+<div class="paragraph">
+<p>Try:</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">oc --context secured exec -n acs-workshop deploy/legacy-frontend -- sh</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This should fail because the distroless image has no shell binary.</p>
+</div>
+</div>
+</details>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+If the hardened image is blocked by the admission controller with "Fixable CVEs of severity Important or higher", a new erratum was published between two image rebuilds. Red Hat hardened images (<code>hi/&#8230;&#8203;</code>) are rebuilt continuously and contain very few packages, so this is rare. Wait for the next rebuild and apply again.
+</td>
+</tr>
+</table>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_solves_compared_to_previous_steps"><a class="anchor" href="#_what_this_solves_compared_to_previous_steps"></a>What this solves (compared to previous steps)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Problem from previous steps</th>
+<th class="tableblock halign-left valign-top">How this step solves it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Policies blocked the vulnerable workloads but the fixes were not applied</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Hardened images, removed privileges, and network segmentation bring the workloads into compliance</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Log4Shell has no patch but the pod could still make outbound callbacks</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Default-deny NetworkPolicy blocks all egress from payments-api, cutting off the exploit&#8217;s callback path</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Risk indicators showed problems but the risk was not reduced</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">RHACS confirms the improvement: lower risk scores, resolved violations, fewer CVEs</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_what_this_does_not_solve_yet"><a class="anchor" href="#_what_this_does_not_solve_yet"></a>What this does NOT solve (yet)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Remaining problem</th>
+<th class="tableblock halign-left valign-top">Addressed in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The fixes are applied manually - the CI pipeline does not enforce policies</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="09-ci-gate.html" class="xref page">Step 9: CI Gate</a> moves the same checks into the build pipeline</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No custom dashboards for monitoring vulnerability and compliance trends</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A future observability session will cover Grafana dashboards with Prometheus metrics and ACS API data</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_official_documentation"><a class="anchor" href="#_official_documentation"></a>Official documentation</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/operating/evaluate-security-risks">Evaluating security risks (Risk view)</a></p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/operating/manage-network-policies">Managing network policies in RHACS (Network Graph, baselines)</a></p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/operating/managing-vulnerabilities">Managing vulnerabilities: exception workflow</a></p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.15/html/network_security/network-policy">Network policy (OpenShift)</a></p>
+</li>
+<li>
+<p><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/4.15/html/authentication_and_authorization/managing-pod-security-policies">Managing Security Context Constraints</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_alternatives_considered"><a class="anchor" href="#_alternatives_considered"></a>Alternatives considered</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Approach</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Hand-written NetworkPolicies (this step)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Exact and easy to review. Needs knowledge of the application&#8217;s flows.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>roxctl netpol generate</code> from the manifests</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">RHACS generates least-privilege policies from the Deployment and Service YAML at build time. Useful for larger applications. Review the output before applying.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>AdminNetworkPolicy</code> / <code>BaselineAdminNetworkPolicy</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cluster-scoped guardrails that tenants cannot override. Useful for platform-wide egress rules.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>EgressFirewall</code> (OVN-Kubernetes)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Namespace egress control by CIDR or DNS name. Useful when some outbound access must stay open.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Virtual patching with WAF or Service Mesh rules</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Filters <code>${jndi:</code> payloads at the edge. Adds defense in depth but can be bypassed by obfuscation, so it should not be the only control.</p></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_reset"><a class="anchor" href="#_reset"></a>Reset</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This returns the application to its end-of-step-7 state.</p>
+</div>
+<div class="listingblock console-input">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash"># 1. Remove network policies and secret
+oc --context secured delete -f 08-remediation/04-network-policies.yaml --ignore-not-found
+oc --context secured delete secret legacy-frontend-db -n acs-workshop --ignore-not-found
+
+# 2. Follow the step 7 Reset to remove policies and restore vulnerable workloads
+# See: Step 7 - Policy Enforcement &gt; Reset</code></pre>
+</div>
+</div>
+</div>
+</div>
+<nav class="pagination">
+  <span class="prev"><a href="07-policy-enforcement.html">Step 7: Policy Enforcement</a></span>
+  <span class="next"><a href="09-ci-gate.html">Step 9: CI Gate</a></span>
+</nav>
+</article>
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="rhd-logo" href="https://developers.redhat.com" target="_blank"></div>
+</footer>
+<script src="../_/js/vendor/clipboard.js"></script>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
